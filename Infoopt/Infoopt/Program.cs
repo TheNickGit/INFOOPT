@@ -10,13 +10,16 @@ namespace Infoopt {
             string orderFilePath = "./data/Orderbestand.csv"; // CHANGE TO ABSOLUTE PATH IF RUNNING IN DEBUG MODE
             string distancesFilePath = "./data/AfstandenMatrix.csv"; // CHANGE TO ABSOLUTE PATH IF RUNNING IN DEBUG MODE
             Order[] orders = fetchOrders(orderFilePath, distancesFilePath);
-            foreach (Order order in orders) Console.WriteLine(order);
+            //foreach (Order order in orders) Console.WriteLine(order);
 
 
-            // make doubly-list and display each value
-            DoublyList<int> dll = DoublyList<int>.fromArray(new int[10] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 });
-            foreach (DoublyNode<int> node in dll)
-                Console.Write($"{node.value} ");
+            //// make doubly-list and display each value
+            //DoublyList<int> dll = DoublyList<int>.fromArray(new int[10] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 });
+            //foreach (DoublyNode<int> node in dll)
+            //    Console.Write($"{node.value} ");
+
+            LocalSearch LS = new LocalSearch(orders);
+            Console.WriteLine("TOTAL COST: " + LS.CalcTotalCost(LS.currentSolution));
 
         }
 

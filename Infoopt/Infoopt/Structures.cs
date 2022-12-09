@@ -170,6 +170,25 @@ namespace Infoopt {
             }
             return new DoublyList<T>(head, tail);
         }
+
+        // Check if this DLL contains the specified element
+        public bool Contains(T target)
+        {
+            DoublyNode<T> current = this.head;
+            if (this.head == null)
+                return false;
+
+            while (current.next != null)
+            {
+                if (current.value.Equals(target))
+                    return true;
+                else
+                    current = current.next;
+            }
+            if (current.value.Equals(target))
+                return true;
+            else return false;
+        }
     }
 
 
