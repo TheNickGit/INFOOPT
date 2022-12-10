@@ -12,6 +12,7 @@ namespace Infoopt {
 
         
         public DoublyNode<T> head, tail;
+        public int Length = 0;
 
 
         // CHECKS
@@ -31,6 +32,7 @@ namespace Infoopt {
                 else
                     tail = tail.extendNext(value);
             }
+            // TODO: Voeg de lengte van values[] toe aan de Length variabel
             return new DoublyList<T>(head, tail);
         }
 
@@ -52,6 +54,7 @@ namespace Infoopt {
                 this.head = this.tail = new DoublyNode<T>(value);
             else
                 this.head = this.head.extendPrev(value);
+            Length++;
             return this.head;
         }
 
@@ -61,6 +64,7 @@ namespace Infoopt {
                 this.head = this.tail = new DoublyNode<T>(value);
             else
                 this.tail = this.tail.extendNext(value);
+            Length++;
             return this.tail;
         }
 
@@ -74,6 +78,7 @@ namespace Infoopt {
                 this.head = prev;
                 Program.Assert(this.head.prev == null); // REMOVE AFTER DEBUGGING
             }
+            Length++;
         }
 
         public void insertAfterNode(T value, DoublyNode<T> node)
@@ -84,6 +89,7 @@ namespace Infoopt {
                 this.tail = next;
                 Program.Assert(this.tail.next == null); // REMOVE AFTER DEBUGGING
             }
+            Length++;
         }
 
 

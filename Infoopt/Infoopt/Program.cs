@@ -19,7 +19,15 @@ namespace Infoopt {
             //    Console.Write($"{node.value} ");
 
             LocalSearch LS = new LocalSearch(orders);
-            Console.WriteLine("TOTAL COST: " + LS.CalcTotalCost(LS.currentSolution));
+            Console.WriteLine("TOTAL COST: " + LS.CalcTotalCost());
+
+            // TEST: Do 10000 attempts to add an order into the schedules.
+            for (int i = 0; i < 10000; i++)
+            {
+                LS.TryAddOrder();
+            }
+            Console.WriteLine("LENGTH: " + LS.truck1Schedule.weekSchedule[0].Length);
+            Console.WriteLine("TOTAL COST: " + LS.CalcTotalCost());
 
         }
 

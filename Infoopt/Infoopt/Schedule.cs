@@ -7,28 +7,26 @@ namespace Infoopt
     class Schedule
     {
         public DoublyList<Order>[] weekSchedule;
-        public float cost = 0;
+        public Order[] orders;
+        public bool[] takenOrders;
+        public float cost;
         public float[] scheduleTimes = new float[5];
-        int maxDayTime = 720; // Trucks can be used for 720 min each day
+        float maxDayTime = 720; // Trucks can be used for 720 min each day
 
         // Constructor
-        public Schedule()
+        public Schedule(Order[] orders, float cost = 0)
         {
             weekSchedule = new DoublyList<Order>[5];
             for (int i = 0; i < 5; i++)
             {
                 DoublyList<Order> daySchedule = new DoublyList<Order>();
                 weekSchedule[i] = daySchedule;
-                scheduleTimes[i] = 30; // 30 min is lost every day for emptying the truck at the end
+                //scheduleTimes[i] = 30; // 30 min is lost every day for emptying the truck at the end
             }
-        }
 
-        // TODO
-        public float CalcCostChange()
-        {
-            float costChange = 0;
-            return costChange;
+            this.orders = orders;
+            takenOrders = new bool[orders.Length];
+            this.cost = cost;
         }
-
     }
 }
