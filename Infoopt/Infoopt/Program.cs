@@ -28,6 +28,10 @@ namespace Infoopt {
             }
             Console.WriteLine("LENGTH: " + LS.truck1Schedule.weekSchedule[0].Length);
             Console.WriteLine("TOTAL COST: " + LS.CalcTotalCost());
+            for (int i = 0; i < 5; i++)
+                Console.WriteLine("Truck1 day " + i + ", time: " + LS.truck1Schedule.scheduleTimes[i]);
+            for (int i = 0; i < 5; i++)
+                Console.WriteLine("Truck2 day " + i + ", time: " + LS.truck2Schedule.scheduleTimes[i]);
 
         }
 

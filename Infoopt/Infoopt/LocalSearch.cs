@@ -12,6 +12,7 @@ namespace Infoopt
         public Schedule
             truck1Schedule,
             truck2Schedule;
+        public int maxDayTime = 720;
 
         // Constructor
         public LocalSearch(Order[] orders)
@@ -44,20 +45,29 @@ namespace Infoopt
             if (takenOrders[orderNum]) // If the order is already used, don't add it
                 return;
             Order order = orders[orderNum];
-            if (order.freq != 1)    // Huidige code werkt alleen met freq = 1
+            if (order.freq != 1)    // TODO: Huidige code werkt alleen met freq = 1
                 return;
 
             // Generate a random day to add the order into
             // TODO: voeg logica toe voor orders met andere frequenties dan 1
-            // int truck = r.Next(2);
-            int truck = 0;
+            int truck = r.Next(2);
             DoublyList<Order>[] weekSchedule;
+            Schedule schedule;
             if (truck == 0)
+            {
+                schedule = truck1Schedule;
                 weekSchedule = truck1Schedule.weekSchedule;
+            }
             else
+            {
+                schedule = truck2Schedule;
                 weekSchedule = truck2Schedule.weekSchedule;
-            //int day = r.Next(5);
-            int day = 0;
+            } 
+            int day = r.Next(5);
+
+            // Return early if the order can never fit into this schedule.
+            if (schedule.scheduleTimes[day] >= maxDayTime || schedule.scheduleTimes[day] + order.emptyDur > maxDayTime)
+                return;
 
             // Generate a random spot to add the order at in the DLL
             int spot = r.Next(weekSchedule[day].Length);
@@ -84,26 +94,32 @@ namespace Infoopt
             if (next != null)
                 nextValue = next.value;
 
+            // Calculate change in time and see if the order can fit in the schedule.
+            float timeChange = CalcTimeChangeAdd(prevValue, nextValue, order);
+            Console.WriteLine("Time change: " + timeChange + ", old time: " + truck1Schedule.scheduleTimes[day] + ", new time: " + (truck1Schedule.scheduleTimes[day] + timeChange));
+            if (schedule.scheduleTimes[day] + timeChange > maxDayTime)
+                return;
+            
+            // Calculate cost change and see if adding this order here is an improvement.
             float costChange = CalcCostChangeAdd(prevValue, nextValue, order);
             Console.WriteLine("Cost change: " + costChange);
 
-            // TODO: Decide on adding the order based on the cost change.
             if (costChange < 0) // If adding the order would result in a negative cost, add it always
             {
                 weekSchedule[day].insertBeforeNode(order, next);
+                schedule.scheduleTimes[day] += timeChange;
                 Console.WriteLine("Order added! Truck: " + (truck+1) + ", Day: " + day + ", Between " + prevValue + " and " + nextValue);
                 takenOrders[orderNum] = true;
-            }
-                
-            else
+            }  
+            else    // TODO: If worse, add node with a chance based on 'a' and 'T'
             {
-                // TODO: If worse, add node with a chance based on 'a' and 'T'
+               
             }
 
         }
 
         // Calculates the total cost of a solution by checking all its content.
-        // This method is very slow! Use the method from the Schedule class instead for small changes.
+        // This method is very slow! Use one of the methods for cost changes instead for small changes.
         public float CalcTotalCost()
         {
             float cost = 0;
@@ -145,6 +161,29 @@ namespace Infoopt
             // Calculate change: costs - gains (so a negative result is good!)
             float costChange = newDistanceCost + pickupTimeCost - (currentDistanceGain + pickupCostGain);
             return costChange;
+        }
+
+        // Calculate the time change for adding an order between prev and next.
+        public float CalcTimeChangeAdd(Order prev, Order next, Order order)
+        {
+            // Time decreases
+            float currentDistanceGain;
+            if (prev == null || next == null)
+                currentDistanceGain = 0;
+            else
+                currentDistanceGain = prev.distanceTo(next).travelDur / 60;
+
+            // Time increases
+            float newDistanceCost;
+            if (prev != null && next != null)
+                newDistanceCost = (prev.distanceTo(order).travelDur + order.distanceTo(next).travelDur) / 60;
+            else
+                newDistanceCost = order.distanceTo(next).travelDur / 60;
+            float pickupTimeCost = order.emptyDur;
+
+            // Calculate change: This number means how much additional time is spend if the order is added
+            float timeChange = newDistanceCost + pickupTimeCost - currentDistanceGain;
+            return timeChange;
         }
     }
 
