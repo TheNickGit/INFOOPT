@@ -9,18 +9,22 @@ namespace Infoopt
     {
         // Config:
         double
-            chanceAdd    = 0.80,
+            chanceAdd    = 0.20,
             chanceRemove = 0.20,
-            chanceShift  = 0;
+            chanceShift  = 0.60; // Doet nog niets
             // chance 'storten'?
 
         Order[] orders;
         bool[] takenOrders; // false = order is not used yet; true = order is used
-        public Order emptyingOrder = new Order(-1, "Maarheze", 0, 0, 0, 30, 287, 56343016, 513026712); // The 'stortplaats'
+        public Order
+            startOrder,
+            emptyingOrder;
         public Schedule
             truck1Schedule,
             truck2Schedule;
-        public int maxDayTime = 720;
+        public int
+            maxDayTime = 720,
+            counter = 0;
         Random random = new Random();
 
         // Variables used in the precomputation of each iteration
@@ -32,17 +36,22 @@ namespace Infoopt
 
 
         // Constructor
-        public LocalSearch(Order[] orders)
+        public LocalSearch(Order[] orders, Order startOrder, Order emtpyingOrder)
         {
             this.orders = orders;
+            this.startOrder = startOrder;
+            this.emptyingOrder = emtpyingOrder;
             takenOrders = new bool[orders.Length];
             truck1Schedule = new Schedule(orders);
             truck2Schedule = new Schedule(orders);
 
+            // In the schedules of each day, at the special startOrder at the start and emptyingOrder at the end, resulting in DLLs of length 2.
             for (int i = 0; i < 5 ; i++)
             {
-                truck1Schedule.weekSchedule[i].extendAtHead(emptyingOrder);
-                truck2Schedule.weekSchedule[i].extendAtHead(emptyingOrder);
+                truck1Schedule.weekSchedule[i].extendAtHead(startOrder);
+                truck1Schedule.weekSchedule[i].extendAtTail(emptyingOrder);
+                truck2Schedule.weekSchedule[i].extendAtHead(startOrder);
+                truck2Schedule.weekSchedule[i].extendAtTail(emptyingOrder);
             }
 
         }
@@ -50,6 +59,7 @@ namespace Infoopt
         // An iteration of the Simulated Annealing algorithm to potentially find a better solution.
         public void Iteration()
         {
+            counter++;
             IterationPrecomputation();
 
             // TODO: Simulated Annealing toepassen door de hiervoor benodigde variabelen en functionaliteit toe te voegen
@@ -81,29 +91,21 @@ namespace Infoopt
                 weekSchedule = truck2Schedule.weekSchedule;
             }
             day = random.Next(5);
-            spot = random.Next(weekSchedule[day].Length);
+            spot = random.Next(1, weekSchedule[day].Length);
 
             // Get the previous and next orders at this spot, compare them and calculate the cost/gain of adding the new order
-            prev = null;
-            if (spot == 0)
+            next = weekSchedule[day].head;
+            for (int i = 0; i < spot; i++)
             {
-                next = weekSchedule[day].head;
+                next = next.next;
             }
-            else
-            {
-                next = weekSchedule[day].head;
-                for (int i = 0; i < spot; i++)
-                {
-                    next = next.next;
-                }
-                prev = next.prev;
-            }
+            prev = next.prev;
 
-            prevValue = null;
-            nextValue = null;
-            if (prev != null)
+            //prevValue = null;
+            //nextValue = null;
+            //if (prev != null)
                 prevValue = prev.value;
-            if (next != null)
+            //if (next != null)
                 nextValue = next.value;
         }
 
@@ -147,7 +149,38 @@ namespace Infoopt
         // Try to remove an order from the current schedules.
         public void TryRemoveOrder()
         {
+            // Return if the first position is chosen as you don't want to remove the startOrder
+            if (spot <= 1)
+                return;
 
+            DoublyNode<Order> current = prev;
+            prev = current.prev;
+            if (prev != null)
+                prevValue = prev.value;
+            else
+                prevValue = null;
+
+            // Calculate change in time and see if the order can fit in the schedule.
+            float timeChange = CalcTimeChangeRemove(prevValue, nextValue, current.value);
+            //Console.WriteLine("Time change: " + timeChange + ", old time: " + truck1Schedule.scheduleTimes[day] + ", new time: " + (truck1Schedule.scheduleTimes[day] + timeChange));
+            if (schedule.scheduleTimes[day] + timeChange > maxDayTime)
+                return;
+
+            //// Calculate cost change and see if adding this order here is an improvement.
+            //float costChange = CalcCostChangeAdd(prevValue, nextValue, order);
+            //Console.WriteLine("Cost change: " + costChange);
+
+            //if (costChange < 0) // If adding the order would result in a negative cost, add it always
+            //{
+            //    weekSchedule[day].insertBeforeNode(order, next);
+            //    schedule.scheduleTimes[day] += timeChange;
+            //    Console.WriteLine("Order added! Truck: " + (truck + 1) + ", Day: " + day + ", Between " + prevValue + " and " + nextValue);
+            //    takenOrders[orderNum] = true;
+            //}
+            //else    // TODO: If worse, add node with a chance based on 'a' and 'T'
+            //{
+
+            //}
         }
 
         // Try to shift two orders in the current schedules.
@@ -202,11 +235,11 @@ namespace Infoopt
         }
 
         // Calculate the time change for adding an order between prev and next.
-        public float CalcTimeChangeAdd(Order prev, Order next, Order order)
+        public float CalcTimeChangeAdd(Order prev, Order next, Order newOrder)
         {
             // Time decreases
             float currentDistanceGain;
-            if (prev == null || next == null)
+            if (prev == null)
                 currentDistanceGain = 0;
             else
                 currentDistanceGain = prev.distanceTo(next).travelDur / 60;
@@ -214,14 +247,30 @@ namespace Infoopt
             // Time increases
             float newDistanceCost;
             if (prev != null && next != null)
-                newDistanceCost = (prev.distanceTo(order).travelDur + order.distanceTo(next).travelDur) / 60;
+                newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(next).travelDur) / 60;
             else
-                newDistanceCost = order.distanceTo(next).travelDur / 60;
-            float pickupTimeCost = order.emptyDur;
+                newDistanceCost = newOrder.distanceTo(next).travelDur / 60;
+            float pickupTimeCost = newOrder.emptyDur;
 
             // Calculate change: This number means how much additional time is spend if the order is added
             float timeChange = newDistanceCost + pickupTimeCost - currentDistanceGain;
             return timeChange;
+        }
+
+        // Calculate the time change when removing an order between prev and next.
+        public float CalcTimeChangeRemove(Order prev, Order next, Order current)
+        {
+            // Time decreases
+            float pickupTimeGain = current.emptyDur;
+            float currentDistanceGain = 0;
+            if (prev == null)
+            {
+
+            }
+            else
+                currentDistanceGain = prev.distanceTo(current).travelDur + current.distanceTo(next).travelDur;
+
+            return 0;
         }
     }
 

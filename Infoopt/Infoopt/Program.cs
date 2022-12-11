@@ -4,12 +4,17 @@ namespace Infoopt {
 
     class Program {
 
+        public static Order
+            startOrder = new Order(-1, "MAARHEEZE-start", 0, 0, 0, 0, 287, 56343016, 513026712), // The startlocation of each day.
+            emptyingOrder = new Order(-2, "MAARHEEZE-stort", 0, 0, 0, 30, 287, 56343016, 513026712); // The 'stortplaats'
+
         static void Main(string[] args) {
 
             // parse orders and display them
             string orderFilePath = "./data/Orderbestand.csv"; // CHANGE TO ABSOLUTE PATH IF RUNNING IN DEBUG MODE
             string distancesFilePath = "./data/AfstandenMatrix.csv"; // CHANGE TO ABSOLUTE PATH IF RUNNING IN DEBUG MODE
             Order[] orders = fetchOrders(orderFilePath, distancesFilePath);
+            
             //foreach (Order order in orders) Console.WriteLine(order);
 
 
@@ -18,20 +23,24 @@ namespace Infoopt {
             //foreach (DoublyNode<int> node in dll)
             //    Console.Write($"{node.value} ");
 
-            LocalSearch LS = new LocalSearch(orders);
+            LocalSearch LS = new LocalSearch(orders, startOrder, emptyingOrder);
             Console.WriteLine("TOTAL COST: " + LS.CalcTotalCost());
 
-            // TEST: Do 10000 attempts to add an order into the schedules.
-            for (int i = 0; i < 10000; i++)
+            // TEST: Do 100.000 iterations.
+            while (LS.counter < 100000)
             {
                 LS.Iteration();
             }
-            Console.WriteLine("LENGTH: " + LS.truck1Schedule.weekSchedule[0].Length);
+
             Console.WriteLine("TOTAL COST: " + LS.CalcTotalCost());
             for (int i = 0; i < 5; i++)
                 Console.WriteLine("Truck1 day " + i + ", time: " + LS.truck1Schedule.scheduleTimes[i]);
             for (int i = 0; i < 5; i++)
                 Console.WriteLine("Truck2 day " + i + ", time: " + LS.truck2Schedule.scheduleTimes[i]);
+
+            Console.WriteLine("-- Schema van truck 1 dag 1 -- lengte: " + LS.truck1Schedule.weekSchedule[0].Length);
+            foreach (DoublyNode<Order> node in LS.truck1Schedule.weekSchedule[0])
+                Console.Write($"{node.value} ");
 
         }
 
@@ -42,8 +51,11 @@ namespace Infoopt {
             (int, int)[][] distances = Parser.parseOrderDistances(distancesFilePath, nDistances:1099);
 
             // link distances to orders
-            foreach(Order order in orders) 
+            startOrder.distancesToOthers = distances[startOrder.distId];
+            emptyingOrder.distancesToOthers = distances[emptyingOrder.distId];
+            foreach (Order order in orders) 
                 order.distancesToOthers = distances[order.distId];
+
             return orders;
         }
 
