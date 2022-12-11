@@ -1,11 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 
 namespace Infoopt
 {
     class LocalSearch
     {
+        // Config:
+        double
+            chanceAdd    = 0.80,
+            chanceRemove = 0.20,
+            chanceShift  = 0;
+            // chance 'storten'?
+
         Order[] orders;
         bool[] takenOrders; // false = order is not used yet; true = order is used
         public Order emptyingOrder = new Order(-1, "Maarheze", 0, 0, 0, 30, 287, 56343016, 513026712); // The 'stortplaats'
@@ -13,6 +21,15 @@ namespace Infoopt
             truck1Schedule,
             truck2Schedule;
         public int maxDayTime = 720;
+        Random random = new Random();
+
+        // Variables used in the precomputation of each iteration
+        int orderNum, truck, day, spot;
+        DoublyList<Order>[] weekSchedule;
+        Schedule schedule;
+        DoublyNode<Order> prev, next;
+        Order prevValue, nextValue;
+
 
         // Constructor
         public LocalSearch(Order[] orders)
@@ -27,32 +44,32 @@ namespace Infoopt
                 truck1Schedule.weekSchedule[i].extendAtHead(emptyingOrder);
                 truck2Schedule.weekSchedule[i].extendAtHead(emptyingOrder);
             }
+
         }
 
-        // TODO
+        // An iteration of the Simulated Annealing algorithm to potentially find a better solution.
         public void Iteration()
         {
-            
+            IterationPrecomputation();
+
+            // TODO: Simulated Annealing toepassen door de hiervoor benodigde variabelen en functionaliteit toe te voegen
+           
+            // Make a random choice for add, remove or shift depending on the chances given in the config.
+            double choice = random.NextDouble();
+            if (choice < chanceAdd)
+                TryAddOrder();
+            else if (choice >= chanceAdd && choice < chanceAdd + chanceRemove)
+                TryRemoveOrder();
+            else
+                TryShiftOrder();
         }
 
-        // Try to add an order into the current schedules of the trucks.
-        public void TryAddOrder()
+        // Generate random variables and do the other calculations needed for all iterations (add, remove, shift).
+        protected void IterationPrecomputation()
         {
-            Random r = new Random();
-
-            // Generate a random order to add
-            int orderNum = r.Next(orders.Length);
-            if (takenOrders[orderNum]) // If the order is already used, don't add it
-                return;
-            Order order = orders[orderNum];
-            if (order.freq != 1)    // TODO: Huidige code werkt alleen met freq = 1
-                return;
-
-            // Generate a random day to add the order into
-            // TODO: voeg logica toe voor orders met andere frequenties dan 1
-            int truck = r.Next(2);
-            DoublyList<Order>[] weekSchedule;
-            Schedule schedule;
+            // Generate random variables to decide where to alter the schedules
+            orderNum = random.Next(orders.Length);
+            truck = random.Next(2);
             if (truck == 0)
             {
                 schedule = truck1Schedule;
@@ -62,18 +79,12 @@ namespace Infoopt
             {
                 schedule = truck2Schedule;
                 weekSchedule = truck2Schedule.weekSchedule;
-            } 
-            int day = r.Next(5);
-
-            // Return early if the order can never fit into this schedule.
-            if (schedule.scheduleTimes[day] >= maxDayTime || schedule.scheduleTimes[day] + order.emptyDur > maxDayTime)
-                return;
-
-            // Generate a random spot to add the order at in the DLL
-            int spot = r.Next(weekSchedule[day].Length);
+            }
+            day = random.Next(5);
+            spot = random.Next(weekSchedule[day].Length);
 
             // Get the previous and next orders at this spot, compare them and calculate the cost/gain of adding the new order
-            DoublyNode<Order> prev = null, next;
+            prev = null;
             if (spot == 0)
             {
                 next = weekSchedule[day].head;
@@ -88,11 +99,27 @@ namespace Infoopt
                 prev = next.prev;
             }
 
-            Order prevValue = null, nextValue = null;
+            prevValue = null;
+            nextValue = null;
             if (prev != null)
                 prevValue = prev.value;
             if (next != null)
                 nextValue = next.value;
+        }
+
+        // Try to add an order into the current schedules.
+        public void TryAddOrder()
+        {
+            // TODO: Deze check kan sneller wanneer je gewoon een aparte datastructuur hebt met alleen nog de ontbrekende orders erin
+            if (takenOrders[orderNum]) // If the order is already used, don't add it
+                return;
+            Order order = orders[orderNum];
+            if (order.freq != 1)    // TODO: Huidige code werkt alleen met freq = 1
+                return;
+
+            // Return early if the order can never fit into this schedule.
+            if (schedule.scheduleTimes[day] >= maxDayTime || schedule.scheduleTimes[day] + order.emptyDur > maxDayTime)
+                return;
 
             // Calculate change in time and see if the order can fit in the schedule.
             float timeChange = CalcTimeChangeAdd(prevValue, nextValue, order);
@@ -115,6 +142,17 @@ namespace Infoopt
             {
                
             }
+        }
+
+        // Try to remove an order from the current schedules.
+        public void TryRemoveOrder()
+        {
+
+        }
+
+        // Try to shift two orders in the current schedules.
+        public void TryShiftOrder()
+        {
 
         }
 

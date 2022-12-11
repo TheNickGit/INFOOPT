@@ -24,7 +24,7 @@ namespace Infoopt {
             // TEST: Do 10000 attempts to add an order into the schedules.
             for (int i = 0; i < 10000; i++)
             {
-                LS.TryAddOrder();
+                LS.Iteration();
             }
             Console.WriteLine("LENGTH: " + LS.truck1Schedule.weekSchedule[0].Length);
             Console.WriteLine("TOTAL COST: " + LS.CalcTotalCost());
