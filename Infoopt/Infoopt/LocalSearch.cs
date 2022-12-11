@@ -9,10 +9,11 @@ namespace Infoopt
     {
         // Config:
         double
-            chanceAdd    = 0.20,
+            chanceAdd = 0.20,
             chanceRemove = 0.20,
-            chanceShift  = 0.60; // Doet nog niets
+            chanceShift = 0.60, // Doet nog niets
             // chance 'storten'?
+            alpha = 0.005; // Chance to accept a worse solution
 
         Order[] orders;
         bool[] takenOrders; // false = order is not used yet; true = order is used
@@ -100,13 +101,8 @@ namespace Infoopt
                 next = next.next;
             }
             prev = next.prev;
-
-            //prevValue = null;
-            //nextValue = null;
-            //if (prev != null)
-                prevValue = prev.value;
-            //if (next != null)
-                nextValue = next.value;
+            prevValue = prev.value;
+            nextValue = next.value;
         }
 
         // Try to add an order into the current schedules.
@@ -125,24 +121,29 @@ namespace Infoopt
 
             // Calculate change in time and see if the order can fit in the schedule.
             float timeChange = CalcTimeChangeAdd(prevValue, nextValue, order);
-            Console.WriteLine("Time change: " + timeChange + ", old time: " + truck1Schedule.scheduleTimes[day] + ", new time: " + (truck1Schedule.scheduleTimes[day] + timeChange));
+            //Console.WriteLine("Time change: " + timeChange + ", old time: " + truck1Schedule.scheduleTimes[day] + ", new time: " + (truck1Schedule.scheduleTimes[day] + timeChange));
             if (schedule.scheduleTimes[day] + timeChange > maxDayTime)
                 return;
             
             // Calculate cost change and see if adding this order here is an improvement.
             float costChange = CalcCostChangeAdd(prevValue, nextValue, order);
-            Console.WriteLine("Cost change: " + costChange);
+            //Console.WriteLine("Cost change: " + costChange);
 
             if (costChange < 0) // If adding the order would result in a negative cost, add it always
             {
                 weekSchedule[day].insertBeforeNode(order, next);
                 schedule.scheduleTimes[day] += timeChange;
-                Console.WriteLine("Order added! Truck: " + (truck+1) + ", Day: " + day + ", Between " + prevValue + " and " + nextValue);
+                //Console.WriteLine("Order added! Truck: " + (truck+1) + ", Day: " + day + ", Between " + prevValue + " and " + nextValue);
+                Console.WriteLine("NORMAL Order added! Truck: " + (truck+1) + ", Day: " + day);
                 takenOrders[orderNum] = true;
             }  
-            else    // TODO: If worse, add node with a chance based on 'a' and 'T'
+            else if (random.NextDouble() < alpha)    // If worse, add node with a chance based on 'a' and 'T'
             {
-               
+                weekSchedule[day].insertBeforeNode(order, next);
+                schedule.scheduleTimes[day] += timeChange;
+                //Console.WriteLine("Order added! Truck: " + (truck+1) + ", Day: " + day + ", Between " + prevValue + " and " + nextValue);
+                Console.WriteLine("ALPHA  Order added! Truck: " + (truck + 1) + ", Day: " + day);
+                takenOrders[orderNum] = true;
             }
         }
 
@@ -155,10 +156,7 @@ namespace Infoopt
 
             DoublyNode<Order> current = prev;
             prev = current.prev;
-            if (prev != null)
-                prevValue = prev.value;
-            else
-                prevValue = null;
+            prevValue = prev.value;
 
             // Calculate change in time and see if the order can fit in the schedule.
             float timeChange = CalcTimeChangeRemove(prevValue, nextValue, current.value);
@@ -167,20 +165,27 @@ namespace Infoopt
                 return;
 
             //// Calculate cost change and see if adding this order here is an improvement.
-            //float costChange = CalcCostChangeAdd(prevValue, nextValue, order);
-            //Console.WriteLine("Cost change: " + costChange);
+            float costChange = CalcCostChangeRemove(prevValue, nextValue, current.value);
+            //Console.WriteLine("Cost change remove: " + costChange);
 
-            //if (costChange < 0) // If adding the order would result in a negative cost, add it always
-            //{
-            //    weekSchedule[day].insertBeforeNode(order, next);
-            //    schedule.scheduleTimes[day] += timeChange;
-            //    Console.WriteLine("Order added! Truck: " + (truck + 1) + ", Day: " + day + ", Between " + prevValue + " and " + nextValue);
-            //    takenOrders[orderNum] = true;
-            //}
-            //else    // TODO: If worse, add node with a chance based on 'a' and 'T'
-            //{
-
-            //}
+            if (costChange < 0) // If removing the order would result in a negative cost, always choose to remove it.
+            {
+                weekSchedule[day].ejectAfterNode(prev);
+                schedule.scheduleTimes[day] += timeChange;
+                Console.WriteLine("NORMAL Order removed! Truck: " + (truck + 1) + ", Day: " + day);
+                // TODO: Orders worden nog niet vrijgegeven! current.value.nr is namelijk niet gelijk aan het orderID, waardoor de array out of bounds gaat. 
+                // DIT IS EEN HEEL BELANGRIJKE TODO! Zonder dit loopt het algoritme uiteindelijk op niets meer uit.
+                //Console.WriteLine("ORDERNUM: " + current.value.nr);
+                //takenOrders[current.value.nr] = false;
+            }
+            else if (random.NextDouble() < alpha)    // TODO: If worse, add node with a chance based on 'a' and 'T'
+            {
+                weekSchedule[day].ejectAfterNode(prev);
+                schedule.scheduleTimes[day] += timeChange;
+                Console.WriteLine("ALPHA  Order removed! Truck: " + (truck + 1) + ", Day: " + day);
+                // TODO: Zelfde als bovenstaande
+                // TODO: Save best solution
+            }
         }
 
         // Try to shift two orders in the current schedules.
@@ -211,50 +216,47 @@ namespace Infoopt
         }
 
         // Calculate the cost change for adding an order between prev and next.
-        public float CalcCostChangeAdd(Order prev, Order next, Order order)
+        public float CalcCostChangeAdd(Order prev, Order next, Order newOrder)
         {
             // Gains
-            float currentDistanceGain;
-            if (prev == null || next == null)
-                currentDistanceGain = 0;
-            else
-                currentDistanceGain = prev.distanceTo(next).travelDur / 60;
-            float pickupCostGain = order.emptyDur * 3;
+            float currentDistanceGain = prev.distanceTo(next).travelDur / 60;
+            float pickupCostGain = newOrder.emptyDur * 3;
 
             // Costs
-            float newDistanceCost;
-            if (prev != null && next != null)
-                newDistanceCost = (prev.distanceTo(order).travelDur + order.distanceTo(next).travelDur) / 60;
-            else
-                newDistanceCost = order.distanceTo(next).travelDur / 60;
-            float pickupTimeCost = order.emptyDur;
+            float newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(next).travelDur) / 60;
+            float pickupTimeCost = newOrder.emptyDur;
 
             // Calculate change: costs - gains (so a negative result is good!)
-            float costChange = newDistanceCost + pickupTimeCost - (currentDistanceGain + pickupCostGain);
-            return costChange;
+            return newDistanceCost + pickupTimeCost - (currentDistanceGain + pickupCostGain);
+        }
+
+        // Calculate the cost change for removing an order between prev and next.
+        public float CalcCostChangeRemove(Order prev, Order next, Order current)
+        {
+            // Gains
+            float currentDistanceGain = (prev.distanceTo(current).travelDur + current.distanceTo(next).travelDur) / 60;
+            float pickupTimeGain = current.emptyDur;
+
+            // Costs
+            float newDistanceCost =  prev.distanceTo(next).travelDur / 60;
+            float pickupCost = current.emptyDur * 3;
+
+            // Calculate change: costs - gains (so a negative result is good!)
+            return newDistanceCost + pickupCost - (currentDistanceGain + pickupTimeGain);
         }
 
         // Calculate the time change for adding an order between prev and next.
         public float CalcTimeChangeAdd(Order prev, Order next, Order newOrder)
         {
             // Time decreases
-            float currentDistanceGain;
-            if (prev == null)
-                currentDistanceGain = 0;
-            else
-                currentDistanceGain = prev.distanceTo(next).travelDur / 60;
+            float currentDistanceGain = prev.distanceTo(next).travelDur / 60;
 
             // Time increases
-            float newDistanceCost;
-            if (prev != null && next != null)
-                newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(next).travelDur) / 60;
-            else
-                newDistanceCost = newOrder.distanceTo(next).travelDur / 60;
+            float newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(next).travelDur) / 60;
             float pickupTimeCost = newOrder.emptyDur;
 
             // Calculate change: This number means how much additional time is spend if the order is added
-            float timeChange = newDistanceCost + pickupTimeCost - currentDistanceGain;
-            return timeChange;
+            return newDistanceCost + pickupTimeCost - currentDistanceGain;
         }
 
         // Calculate the time change when removing an order between prev and next.
@@ -262,16 +264,17 @@ namespace Infoopt
         {
             // Time decreases
             float pickupTimeGain = current.emptyDur;
-            float currentDistanceGain = 0;
-            if (prev == null)
-            {
+            float currentDistanceGain = (prev.distanceTo(current).travelDur + current.distanceTo(next).travelDur) / 60;
 
-            }
-            else
-                currentDistanceGain = prev.distanceTo(current).travelDur + current.distanceTo(next).travelDur;
+            // time increases
+            float newDistanceCost = prev.distanceTo(next).travelDur / 60;
 
-            return 0;
+            // Calcuate change: This number means how much time is spend more/less when this order is removed.
+            return newDistanceCost - (pickupTimeGain + currentDistanceGain);
         }
     }
 
 }
+
+// TODOs:
+// - Afvalvolumes tellen nog niet mee

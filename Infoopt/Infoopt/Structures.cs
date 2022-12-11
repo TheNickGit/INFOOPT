@@ -100,6 +100,7 @@ namespace Infoopt {
             {
                 this.head = node;
             }
+            Length--;
             return node.ejectPrev();
         }
 
@@ -109,6 +110,7 @@ namespace Infoopt {
             {
                 this.tail = node;
             }
+            Length--;
             return node.ejectNext();
         }
 
