@@ -336,17 +336,11 @@ namespace Infoopt {
             return this;
         }
 
-
-        // SWAP THIS NODE WITH ANOTHER NODE
+        // SWAP THIS NODE WITH ANOTHER NODE - version 2
         public void swapWith(DoublyNode<T> n1)
         {
-            DoublyNode<T> newPrev = n1.prev, newNext = n1.next;
-            n1.prev = this.prev;
-            n1.next = this.next;
-            this.prev = newPrev;
-            this.next = newNext;
+            (n1.value, this.value) = (this.value, n1.value);
         }
-
     }
 
 }

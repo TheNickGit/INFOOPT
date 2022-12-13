@@ -33,7 +33,7 @@ namespace Infoopt {
             Console.WriteLine("TOTAL COST: " + LS.CalcTotalCost());
 
             // TEST: Do 100.000 iterations.
-            while (LS.counter < 10000000)
+            while (LS.counter < 1000000)
             {
                 LS.Iteration();
             }

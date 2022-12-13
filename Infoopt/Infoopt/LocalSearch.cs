@@ -11,7 +11,7 @@ namespace Infoopt
         double
             chanceAdd = 0.20,
             chanceRemove = 0.20,
-            chanceShift = 0.60, // Doet nog niets
+            chanceShift = 0.60,
             // chance 'storten'?
             alpha = 0.005; // Chance to accept a worse solution
 
@@ -71,7 +71,7 @@ namespace Infoopt
                 TryAddOrder();
             else if (choice >= chanceAdd && choice < chanceAdd + chanceRemove)
                 TryRemoveOrder();
-            else
+            else if (choice >= chanceAdd + chanceRemove && choice < chanceAdd + chanceRemove + chanceShift)
                 TryShiftOrder();
         }
 
@@ -130,7 +130,7 @@ namespace Infoopt
                 weekSchedule[day].insertBeforeNode(order, next);
                 schedule.scheduleTimes[day] += timeChange;
                 //Console.WriteLine("Order added! Truck: " + (truck+1) + ", Day: " + day + ", Between " + prevValue + " and " + nextValue);
-                Console.WriteLine("NORMAL Order added! Truck: " + (truck+1) + ", Day: " + day);
+                //Console.WriteLine("NORMAL Order added! Truck: " + (truck+1) + ", Day: " + day);
                 takenOrders[orderNum] = true;
             }  
             else if (random.NextDouble() < alpha)    // If worse, add node with a chance based on 'a' and 'T'
@@ -138,7 +138,8 @@ namespace Infoopt
                 weekSchedule[day].insertBeforeNode(order, next);
                 schedule.scheduleTimes[day] += timeChange;
                 //Console.WriteLine("Order added! Truck: " + (truck+1) + ", Day: " + day + ", Between " + prevValue + " and " + nextValue);
-                Console.WriteLine("ALPHA  Order added! Truck: " + (truck + 1) + ", Day: " + day);
+                //Console.WriteLine("ALPHA  Order added! Truck: " + (truck + 1) + ", Day: " + day);
+                // TODO: Save best solution
                 takenOrders[orderNum] = true;
             }
         }
@@ -160,7 +161,7 @@ namespace Infoopt
             if (schedule.scheduleTimes[day] + timeChange > maxDayTime)
                 return;
 
-            //// Calculate cost change and see if adding this order here is an improvement.
+            // Calculate cost change and see if adding this order here is an improvement.
             float costChange = CalcCostChangeRemove(prevValue, nextValue, current.value);
             //Console.WriteLine("Cost change remove: " + costChange);
 
@@ -168,18 +169,15 @@ namespace Infoopt
             {
                 weekSchedule[day].ejectAfterNode(prev);
                 schedule.scheduleTimes[day] += timeChange;
-                Console.WriteLine("NORMAL Order removed! Truck: " + (truck + 1) + ", Day: " + day);
-                // TODO: Orders worden nog niet vrijgegeven! current.value.nr is namelijk niet gelijk aan het orderID, waardoor de array out of bounds gaat. 
-                // DIT IS EEN HEEL BELANGRIJKE TODO! Zonder dit loopt het algoritme uiteindelijk op niets meer uit.
+                //Console.WriteLine("NORMAL Order removed! Truck: " + (truck + 1) + ", Day: " + day);
                 //Console.WriteLine("ORDERNUM: " + current.value.nr);
                 takenOrders[current.value.spot] = false;
             }
-            else if (random.NextDouble() < alpha)    // TODO: If worse, add node with a chance based on 'a' and 'T'
+            else if (random.NextDouble() < alpha)    // If worse, add node with a chance based on 'a' and 'T'
             {
                 weekSchedule[day].ejectAfterNode(prev);
                 schedule.scheduleTimes[day] += timeChange;
-                Console.WriteLine("ALPHA  Order removed! Truck: " + (truck + 1) + ", Day: " + day);
-                // TODO: Zelfde als bovenstaande
+                //Console.WriteLine("ALPHA  Order removed! Truck: " + (truck + 1) + ", Day: " + day);
                 // TODO: Save best solution
                 takenOrders[current.value.spot] = false;
             }
@@ -188,6 +186,42 @@ namespace Infoopt
         // Try to shift two orders in the current schedules.
         public void TryShiftOrder()
         {
+            // TODO: shift tussen schema's en tussen trucks; huidige implementatie is tussen zelfde schema.
+            int spot2 = random.Next(1, weekSchedule[day].Length);
+            if (spot <= 1 || spot2 <= 1 || spot == spot2)  // No use in swapping with itself
+                return;
+
+            DoublyNode<Order> current = prev;
+            prev = current.prev;
+            prevValue = prev.value;
+
+            DoublyNode<Order> shiftTarget = weekSchedule[day].head.skipForward(spot2 - 1);
+
+            // TODO: Houd rekening met de verschillende shifts (in schema, tussen schema's etc.), want die kunnen een verschillende manier van berekenen nodig hebben!
+            float timeChange = CalcTimeChangeShift(prevValue, nextValue, current.value, shiftTarget.value);
+            float timeChange2 = CalcTimeChangeShift(shiftTarget.prev.value, shiftTarget.next.value, shiftTarget.value, current.value);
+            if (schedule.scheduleTimes[day] + timeChange + timeChange2 > 720) // Check if shift fits time-wise
+                return;
+            //Console.WriteLine("timeChange: " + timeChange + ", timechange2: " + timeChange2);
+
+            // Calculate cost change and see if shifting these orders is an improvement.
+            float costChange = CalcCostChangeShift(prevValue, nextValue, current.value, shiftTarget.value);
+            float costChange2 = CalcCostChangeShift(shiftTarget.prev.value, shiftTarget.next.value, shiftTarget.value, current.value);
+
+            if (costChange + costChange2 < 0) // If the shift would result in a negative cost, perform it always.
+            {
+                weekSchedule[day].swapNodes(current, shiftTarget);
+                schedule.scheduleTimes[day] += timeChange + timeChange2;
+                //Console.WriteLine("NORMAL Order shifted! Truck: " + (truck + 1) + ", Day: " + day);
+                //Console.WriteLine(current.value + "" + shiftTarget.value);
+            }
+            else if (random.NextDouble() < alpha)   // If worse, perform the shift with a chance based on 'a' and 'T'
+            {
+                weekSchedule[day].swapNodes(current, shiftTarget);
+                schedule.scheduleTimes[day] += timeChange + timeChange2;
+                //Console.WriteLine("ALPHA  Order shifted! Truck: " + (truck + 1) + ", Day: " + day);
+                //Console.WriteLine(current.value + "" + shiftTarget.value);
+            }
 
         }
 
@@ -242,6 +276,18 @@ namespace Infoopt
             return newDistanceCost + pickupCost - (currentDistanceGain + pickupTimeGain);
         }
 
+        public float CalcCostChangeShift(Order prev, Order next, Order oldOrder, Order newOrder)
+        {
+            // Gains
+            float oldDistanceGain = (prev.distanceTo(oldOrder).travelDur + oldOrder.distanceTo(next).travelDur) / 60;
+
+            // Costs
+            float newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(next).travelDur) / 60;
+
+            // Calculate change: costs - gains (so a negative result is good!)
+            return newDistanceCost - oldDistanceGain;
+        }
+
         // Calculate the time change for adding an order between prev and next.
         public float CalcTimeChangeAdd(Order prev, Order next, Order newOrder)
         {
@@ -269,9 +315,24 @@ namespace Infoopt
             // Calcuate change: This number means how much time is spend more/less when this order is removed.
             return newDistanceCost - (pickupTimeGain + currentDistanceGain);
         }
+
+        // Calculate the time change when shifting orders.
+        public float CalcTimeChangeShift(Order prev, Order next, Order oldOrder, Order newOrder)
+        {
+            // Time decreases
+            float pickupTimeGain = oldOrder.emptyDur;
+            float oldDistanceGain = (prev.distanceTo(oldOrder).travelDur + oldOrder.distanceTo(next).travelDur) / 60;
+
+            // Time increases
+            float pickupTimeCost = newOrder.emptyDur;
+            float newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(next).travelDur) / 60;
+
+            return pickupTimeCost + newDistanceCost - (pickupTimeGain + oldDistanceGain);
+        }
     }
 
 }
 
-// TODOs:
-// - Afvalvolumes tellen nog niet mee
+/// TODOs:
+/// - Afvalvolumes tellen nog niet mee
+/// - Aandachtspuntje shifts: Kan een order om te storten geshift worden en zo ja, hoe?
