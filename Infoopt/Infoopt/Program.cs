@@ -14,7 +14,13 @@ namespace Infoopt {
             string orderFilePath = "./data/Orderbestand.csv"; // CHANGE TO ABSOLUTE PATH IF RUNNING IN DEBUG MODE
             string distancesFilePath = "./data/AfstandenMatrix.csv"; // CHANGE TO ABSOLUTE PATH IF RUNNING IN DEBUG MODE
             Order[] orders = fetchOrders(orderFilePath, distancesFilePath);
-            
+
+            /// TODO Dit is een noodoplossing om de Remove goed te laten werken! Aangezien orderID en de plek in de array niet hetzelfde zijn, is de plek in de array niet te vinden.
+            /// Een efficientere datastructuur kan chiller zijn.
+            for (int i = 0; i < orders.Length; i++)
+                orders[i].spot = i;
+            ///
+
             //foreach (Order order in orders) Console.WriteLine(order);
 
 
@@ -27,7 +33,7 @@ namespace Infoopt {
             Console.WriteLine("TOTAL COST: " + LS.CalcTotalCost());
 
             // TEST: Do 100.000 iterations.
-            while (LS.counter < 100000)
+            while (LS.counter < 10000000)
             {
                 LS.Iteration();
             }

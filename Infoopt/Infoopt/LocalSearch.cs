@@ -172,7 +172,7 @@ namespace Infoopt
                 // TODO: Orders worden nog niet vrijgegeven! current.value.nr is namelijk niet gelijk aan het orderID, waardoor de array out of bounds gaat. 
                 // DIT IS EEN HEEL BELANGRIJKE TODO! Zonder dit loopt het algoritme uiteindelijk op niets meer uit.
                 //Console.WriteLine("ORDERNUM: " + current.value.nr);
-                //takenOrders[current.value.nr] = false;
+                takenOrders[current.value.spot] = false;
             }
             else if (random.NextDouble() < alpha)    // TODO: If worse, add node with a chance based on 'a' and 'T'
             {
@@ -181,6 +181,7 @@ namespace Infoopt
                 Console.WriteLine("ALPHA  Order removed! Truck: " + (truck + 1) + ", Day: " + day);
                 // TODO: Zelfde als bovenstaande
                 // TODO: Save best solution
+                takenOrders[current.value.spot] = false;
             }
         }
 

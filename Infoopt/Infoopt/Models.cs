@@ -12,7 +12,8 @@ namespace Infoopt
             freq,                       // weekly frequency of order
             binAmt,                     // amount of bins
             binVol,                     // volume of bins
-            distId;                     // id of distance of order in distance-matrix (NOTE, DIFFERENT ORDERS MIGHT HAVE SAME DISTANCE ID ENTRY)
+            distId,                     // id of distance of order in distance-matrix (NOTE, DIFFERENT ORDERS MIGHT HAVE SAME DISTANCE ID ENTRY)
+            spot;                       // TODO: Deze is er alleen even als tussentijdse oplossing om orders te koppelen aan hun plek in de orders array
         public float emptyDur;          // time it takes to empty the bins of this order
         public (int X, int Y) coord;    // coordinates of order
 
