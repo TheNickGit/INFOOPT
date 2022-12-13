@@ -95,11 +95,7 @@ namespace Infoopt
             spot = random.Next(1, weekSchedule[day].Length);
 
             // Get the previous and next orders at this spot, compare them and calculate the cost/gain of adding the new order
-            next = weekSchedule[day].head;
-            for (int i = 0; i < spot; i++)
-            {
-                next = next.next;
-            }
+            next = weekSchedule[day].head.skipForward(spot);
             prev = next.prev;
             prevValue = prev.value;
             nextValue = next.value;

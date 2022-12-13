@@ -1,0 +1,11 @@
+TODOs:
+- Shift implementeren: in 1 schema; tussen schema's van 1 truck; en tussen beide trucks.
+- Logica inbouwen zodat rekening wordt gehouden met afvalvolumes, inclusief dat er geleegd wordt tussendoor.
+- Een manier bedenken om orders met freq > 1 goed en optimaal op te nemen in de schema's.
+- Simulated Annealing verder uitwerken: temperatuur en andere variabelen toevoegen en deze gebaseerd op het aantal iteraties updaten.
+- Checker werkende krijgen en de output van het programma zo laten zijn dat deze geaccepteerd wordt door de checker.
+
+Mogelijke optimalisaties:
+- Een efficiëntere datastructuur om gebruikte en beschikbare orders bij te houden.
+- De data clusteren of vooraf al een deel van de schema's bepalen.
+- Spelen met de config variabelen van Sim An om zo sneller een optimalere oplosing te vinden.
