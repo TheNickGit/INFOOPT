@@ -22,8 +22,11 @@ namespace Infoopt
         public (int dist, int travelDur)[] distancesToOthers;
 
         // instead use this helper method to get distance-data from one order to another order
-        public (int dist, int travelDur) distanceTo(Order other)
-            => this.distancesToOthers[other.distId];
+        public (int dist, int travelDur) distanceTo(Order other) {
+            if (this.distId == other.distId) return (0, 0);
+            return this.distancesToOthers[other.distId];
+        }
+            
 
 
         public Order(
@@ -54,5 +57,14 @@ namespace Infoopt
             );
         }
 
+        // decrease the order frequency by one (due to the order having been placed into a route)
+        public void decreaseFrequency() {
+            this.freq -= 1;
+        }
+
+        // increase the order frequency by one (due to the order having been removed from a route)
+        public void increaseFrequency() {
+            this.freq += 1;
+        }
     }
 }

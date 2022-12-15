@@ -42,7 +42,8 @@ namespace Infoopt {
             {
                 Program.Assert(head.prev == null && tail.next == null); // REMOVE AFTER DEBUGGING
                 this.head = head;
-                this.tail = tail;
+                this.tail = this.head.extendNext(tail.value);
+                this.Length = 2;
             }
         }
 

@@ -130,7 +130,7 @@ namespace Infoopt
                 weekSchedule[day].insertBeforeNode(order, next);
                 schedule.scheduleTimes[day] += timeChange;
                 //Console.WriteLine("Order added! Truck: " + (truck+1) + ", Day: " + day + ", Between " + prevValue + " and " + nextValue);
-                Console.WriteLine("NORMAL Order added! Truck: " + (truck+1) + ", Day: " + day);
+                //Console.WriteLine("NORMAL Order added! Truck: " + (truck+1) + ", Day: " + day);
                 takenOrders[orderNum] = true;
             }  
             else if (random.NextDouble() < alpha)    // If worse, add node with a chance based on 'a' and 'T'
@@ -138,7 +138,7 @@ namespace Infoopt
                 weekSchedule[day].insertBeforeNode(order, next);
                 schedule.scheduleTimes[day] += timeChange;
                 //Console.WriteLine("Order added! Truck: " + (truck+1) + ", Day: " + day + ", Between " + prevValue + " and " + nextValue);
-                Console.WriteLine("ALPHA  Order added! Truck: " + (truck + 1) + ", Day: " + day);
+                //Console.WriteLine("ALPHA  Order added! Truck: " + (truck + 1) + ", Day: " + day);
                 takenOrders[orderNum] = true;
             }
         }
@@ -168,7 +168,7 @@ namespace Infoopt
             {
                 weekSchedule[day].ejectAfterNode(prev);
                 schedule.scheduleTimes[day] += timeChange;
-                Console.WriteLine("NORMAL Order removed! Truck: " + (truck + 1) + ", Day: " + day);
+                //Console.WriteLine("NORMAL Order removed! Truck: " + (truck + 1) + ", Day: " + day);
                 // TODO: Orders worden nog niet vrijgegeven! current.value.nr is namelijk niet gelijk aan het orderID, waardoor de array out of bounds gaat. 
                 // DIT IS EEN HEEL BELANGRIJKE TODO! Zonder dit loopt het algoritme uiteindelijk op niets meer uit.
                 //Console.WriteLine("ORDERNUM: " + current.value.nr);
@@ -178,7 +178,7 @@ namespace Infoopt
             {
                 weekSchedule[day].ejectAfterNode(prev);
                 schedule.scheduleTimes[day] += timeChange;
-                Console.WriteLine("ALPHA  Order removed! Truck: " + (truck + 1) + ", Day: " + day);
+                //Console.WriteLine("ALPHA  Order removed! Truck: " + (truck + 1) + ", Day: " + day);
                 // TODO: Zelfde als bovenstaande
                 // TODO: Save best solution
                 takenOrders[current.value.spot] = false;
