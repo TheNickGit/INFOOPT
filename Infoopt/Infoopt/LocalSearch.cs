@@ -202,7 +202,7 @@ namespace Infoopt
             float timeChange2 = CalcTimeChangeShift(shiftTarget.prev.value, shiftTarget.next.value, shiftTarget.value, current.value);
             if (schedule.scheduleTimes[day] + timeChange + timeChange2 > 720) // Check if shift fits time-wise
                 return;
-            //Console.WriteLine("timeChange: " + timeChange + ", timechange2: " + timeChange2);
+            //Console.WriteLine("timeChange: " + timeChange + ", timechange2: " + timeChange2 + ", total: " + (timeChange + timeChange2));
 
             // Calculate cost change and see if shifting these orders is an improvement.
             float costChange = CalcCostChangeShift(prevValue, nextValue, current.value, shiftTarget.value);
@@ -282,7 +282,13 @@ namespace Infoopt
             float oldDistanceGain = (prev.distanceTo(oldOrder).travelDur + oldOrder.distanceTo(next).travelDur) / 60;
 
             // Costs
-            float newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(next).travelDur) / 60;
+            float newDistanceCost;
+            if (newOrder == next)
+                newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(oldOrder).travelDur) / 60;
+            else if (newOrder == prev)
+                newDistanceCost = (oldOrder.distanceTo(newOrder).travelDur + newOrder.distanceTo(next).travelDur) / 60;
+            else
+                newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(next).travelDur) / 60;
 
             // Calculate change: costs - gains (so a negative result is good!)
             return newDistanceCost - oldDistanceGain;
@@ -325,7 +331,13 @@ namespace Infoopt
 
             // Time increases
             float pickupTimeCost = newOrder.emptyDur;
-            float newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(next).travelDur) / 60;
+            float newDistanceCost;
+            if (newOrder == next)
+                newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(oldOrder).travelDur) / 60;
+            else if (newOrder == prev)
+                newDistanceCost = (oldOrder.distanceTo(newOrder).travelDur + newOrder.distanceTo(next).travelDur) / 60;
+            else
+                newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(next).travelDur) / 60;
 
             return pickupTimeCost + newDistanceCost - (pickupTimeGain + oldDistanceGain);
         }

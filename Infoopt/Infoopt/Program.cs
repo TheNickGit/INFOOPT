@@ -1,8 +1,12 @@
 ﻿using System;
+using System.Net.Http.Headers;
 
 namespace Infoopt {
 
     class Program {
+
+        // Config:
+        static int totalIterations = 10000000;
 
         public static Order
             startOrder = new Order(-1, "MAARHEEZE-start", 0, 0, 0, 0, 287, 56343016, 513026712), // The startlocation of each day.
@@ -20,14 +24,13 @@ namespace Infoopt {
             for (int i = 0; i < orders.Length; i++)
                 orders[i].spot = i;
 
-
-
             printLSCheckerOutput(orders);
+            //testLS(orders);
         }
 
         public static void printLSCheckerOutput(Order[] orders) {
             LocalSearch LS = new LocalSearch(orders, startOrder, emptyingOrder);
-            while (LS.counter < 1000000) LS.Iteration();
+            while (LS.counter < totalIterations) LS.Iteration();
 
             for(int i = 0; i<5; i++) {
                 int j = 1;
@@ -52,8 +55,8 @@ namespace Infoopt {
             LocalSearch LS = new LocalSearch(orders, startOrder, emptyingOrder);
             Console.WriteLine("TOTAL COST: " + LS.CalcTotalCost());
 
-            // TEST: Do 100.000 iterations.
-            while (LS.counter < 1000000)
+            // Perform iterations
+            while (LS.counter < totalIterations)
             {
                 LS.Iteration();
             }
