@@ -20,6 +20,8 @@ namespace Infoopt {
         public bool isHead(DoublyNode<T> node) => node == this.head;
         public bool isTail(DoublyNode<T> node) => node == this.tail;
 
+        public bool isHeadOrTail(DoublyNode<T> node) => this.isHead(node) || this.isTail(node);
+
 
         // CONSTRUCTOR METHODS
         public static DoublyList<T> fromArray(T[] values)
@@ -141,13 +143,9 @@ namespace Infoopt {
         }
 
 
-        // SWAP THE POSITION OF TWO SPECIFIC NODES
-        public void swapNodes(DoublyNode<T> n1, DoublyNode<T> n2)
+        // SWAP THE VALUES OF TWO SPECIFIC NODES (v2)
+        public static void swapNodes(DoublyNode<T> n1, DoublyNode<T> n2)
         {
-            if (this.isHead(n1)) this.head = n2;
-            else if (this.isHead(n2)) this.head = n1;
-            else if (this.isTail(n1)) this.tail = n2;
-            else if (this.isTail(n2)) this.tail = n1;
             n1.swapWith(n2);
         }
 

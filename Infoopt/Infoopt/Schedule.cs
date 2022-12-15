@@ -49,6 +49,7 @@ namespace Infoopt
 
 
     class Schedule2 {
+
         public Route[] weekRoutes = new Route[5];
 
         public Schedule2(Order startOrder, Order stopOrder, float truckUnloadTime) {
@@ -65,6 +66,115 @@ namespace Infoopt
             }
             return cost;
         }
+
+        
+        // Calculate the time change for adding an order between prev and next.
+        public static float timeChangePutBeforeOrder(Order newOrder, DoublyNode<Order> routeOrder)
+        {
+            Order prev = routeOrder.prev.value,
+                next = routeOrder.value; 
+
+            // Time decreases
+            float currentDistanceGain = prev.distanceTo(next).travelDur / 60;
+
+            // Time increases
+            float newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(next).travelDur) / 60;
+            float pickupTimeCost = newOrder.emptyDur;
+
+            // Calculate change: This number means how much additional time is spend if the order is added
+            return (newDistanceCost + pickupTimeCost) - currentDistanceGain;
+        }
+                
+        // Calculate the cost change for adding an order between prev and next.
+        public static float costChangePutBeforeOrder(Order newOrder, DoublyNode<Order> routeOrder)
+        {
+            Order prev = routeOrder.prev.value,
+                next = routeOrder.value; 
+
+            // Gains
+            float currentDistanceGain = prev.distanceTo(next).travelDur / 60;
+            float pickupCostGain = newOrder.emptyDur * 3;
+
+            // Costs
+            float newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(next).travelDur) / 60;
+            float pickupTimeCost = newOrder.emptyDur;
+
+            // Calculate change: costs - gains (so a negative result is good!)
+            return (newDistanceCost + pickupTimeCost) - (currentDistanceGain + pickupCostGain);
+        }
+
+        // Calculate the time change when removing an order between prev and next.
+        public static float timeChangeRemoveOrder(DoublyNode<Order> routeOrder)
+        {
+            Order prev = routeOrder.prev.value;
+            Order current = routeOrder.value;
+            Order next = routeOrder.next.value;
+
+            // Time decreases
+            float pickupTimeGain = current.emptyDur;
+            float currentDistanceGain = (prev.distanceTo(current).travelDur + current.distanceTo(next).travelDur) / 60;
+
+            // time increases
+            float newDistanceCost = prev.distanceTo(next).travelDur / 60;
+
+            // Calcuate change: This number means how much time is spend more/less when this order is removed.
+            return newDistanceCost - (pickupTimeGain + currentDistanceGain);
+        }
+        
+        // Calculate the cost change for removing an order between prev and next.
+        public static float costChangeRemoveOrder(DoublyNode<Order> routeOrder)
+        {
+            Order prev = routeOrder.prev.value,
+                current = routeOrder.value,
+                next = routeOrder.next.value;
+            
+            // Gains
+            float currentDistanceGain = (prev.distanceTo(current).travelDur + current.distanceTo(next).travelDur) / 60;
+            float pickupTimeGain = current.emptyDur;
+
+            // Costs
+            float newDistanceCost =  prev.distanceTo(next).travelDur / 60;
+            float pickupCost = current.emptyDur * 3;
+
+            // Calculate change: costs - gains (so a negative result is good!)
+            return newDistanceCost + pickupCost - (currentDistanceGain + pickupTimeGain);
+        }
+
+        // Calculate the time change when shifting orders.
+        public static float timeChangeShiftOrders(DoublyNode<Order> oldRouteOrder, DoublyNode<Order> newRouteOrder)
+        {
+            Order prev = oldRouteOrder.prev.value,
+                oldOrder = oldRouteOrder.value,
+                next = oldRouteOrder.next.value,
+                newOrder = newRouteOrder.value;
+
+            // Time decreases
+            float pickupTimeGain = oldOrder.emptyDur;
+            float oldDistanceGain = (prev.distanceTo(oldOrder).travelDur + oldOrder.distanceTo(next).travelDur) / 60;
+
+            // Time increases
+            float pickupTimeCost = newOrder.emptyDur;
+            float newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(next).travelDur) / 60;
+
+            return (pickupTimeCost + newDistanceCost) - (pickupTimeGain + oldDistanceGain);
+        }
+        public static float costChangeShiftOrders(DoublyNode<Order> oldRouteOrder, DoublyNode<Order> newRouteOrder)
+        {
+            Order prev = oldRouteOrder.prev.value,
+                oldOrder = oldRouteOrder.value,
+                next = oldRouteOrder.next.value,
+                newOrder = newRouteOrder.value;
+            
+            // Gains
+            float oldDistanceGain = (prev.distanceTo(oldOrder).travelDur + oldOrder.distanceTo(next).travelDur) / 60;
+
+            // Costs
+            float newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(next).travelDur) / 60;
+
+            // Calculate change: costs - gains (so a negative result is good!)
+            return newDistanceCost - oldDistanceGain;
+        }
+
     }
 
 
@@ -92,79 +202,17 @@ namespace Infoopt
             routeOrder.value.increaseFrequency();               // signal that order has been removed from a route; one more pickup to do again
         }
 
-
-        // Calculate the time change for adding an order between prev and next.
-        public static float timeChangeCalcPutOrderBefore(Order newOrder, DoublyNode<Order> routeOrder)
-        {
-            Order prev = routeOrder.prev.value;
-            Order next = routeOrder.value; 
-
-            // Time decreases
-            float currentDistanceGain = prev.distanceTo(next).travelDur / 60;
-
-            // Time increases
-            float newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(next).travelDur) / 60;
-            float pickupTimeCost = newOrder.emptyDur;
-
-            // Calculate change: This number means how much additional time is spend if the order is added
-            return (newDistanceCost + pickupTimeCost) - currentDistanceGain;
-        }
-                
-        // Calculate the cost change for adding an order between prev and next.
-        public static float costChangeCalcPutOrderBefore(Order newOrder, DoublyNode<Order> routeOrder)
-        {
-            Order prev = routeOrder.prev.value,
-                next = routeOrder.value; 
-
-            // Gains
-            float currentDistanceGain = prev.distanceTo(next).travelDur / 60;
-            float pickupCostGain = newOrder.emptyDur * 3;
-
-            // Costs
-            float newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(next).travelDur) / 60;
-            float pickupTimeCost = newOrder.emptyDur;
-
-            // Calculate change: costs - gains (so a negative result is good!)
-            return (newDistanceCost + pickupTimeCost) - (currentDistanceGain + pickupCostGain);
+        public static void shiftOrders(
+                (Route route, DoublyNode<Order> routeOrder, float dt) specs,
+                (Route route, DoublyNode<Order> routeOrder, float dt) specs2) {
+            DoublyList<Order>.swapNodes(specs.routeOrder, specs2.routeOrder);
+            specs.route.timeToComplete += specs.dt;
+            specs2.route.timeToComplete += specs2.dt;
         }
 
-        // Calculate the time change when removing an order between prev and next.
-        public static float timeChangeCalcRemoveOrder(DoublyNode<Order> routeOrder)
-        {
-            Order prev = routeOrder.prev.value;
-            Order current = routeOrder.value;
-            Order next = routeOrder.next.value;
-
-            // Time decreases
-            float pickupTimeGain = current.emptyDur;
-            float currentDistanceGain = (prev.distanceTo(current).travelDur + current.distanceTo(next).travelDur) / 60;
-
-            // time increases
-            float newDistanceCost = prev.distanceTo(next).travelDur / 60;
-
-            // Calcuate change: This number means how much time is spend more/less when this order is removed.
-            return newDistanceCost - (pickupTimeGain + currentDistanceGain);
-        }
-
-        // Calculate the cost change for removing an order between prev and next.
-        public static float costChangeCalcRemoveOrder(DoublyNode<Order> routeOrder)
-        {
-            Order prev = routeOrder.prev.value,
-                current = routeOrder.value,
-                next = routeOrder.next.value;
-            
-            // Gains
-            float currentDistanceGain = (prev.distanceTo(current).travelDur + current.distanceTo(next).travelDur) / 60;
-            float pickupTimeGain = current.emptyDur;
-
-            // Costs
-            float newDistanceCost =  prev.distanceTo(next).travelDur / 60;
-            float pickupCost = current.emptyDur * 3;
-
-            // Calculate change: costs - gains (so a negative result is good!)
-            return newDistanceCost + pickupCost - (currentDistanceGain + pickupTimeGain);
-        }
     }
+
+
 
     class LS2 {
 
@@ -219,7 +267,7 @@ namespace Infoopt
 
         public void MutateRandomTruckDayRoutes(int i) {
 
-            (Order order, Truck truck, WorkDay day, DoublyNode<Order> routeOrder) mutation = PrecomputeMutationValues(); 
+            (Truck truck, WorkDay day, DoublyNode<Order> routeOrder) = PrecomputeMutationValues(); 
 
             // TODO: Simulated Annealing toepassen door de hiervoor benodigde variabelen en functionaliteit toe te voegen
            
@@ -228,31 +276,26 @@ namespace Infoopt
 
             double choice = random.NextDouble();
             if (choice < chanceAdd) 
-                TryAddOrder(mutation.order, mutation.truck, mutation.day, mutation.routeOrder);
+                TryAddOrder(truck, day, routeOrder);
             else if (choice >= chanceAdd && choice < chanceAdd + chanceRemove)
-                TryRemoveOrder(mutation.truck, mutation.day, mutation.routeOrder);
+                TryRemoveOrder(truck, day, routeOrder);
             else
-                TryShiftOrder();
+                TryShiftOrders(truck, day, routeOrder);
 
         }
 
         // Generate random variables and do the other calculations needed for all iterations (add, remove, shift).
-        public (Order, Truck, WorkDay, DoublyNode<Order>) PrecomputeMutationValues() {
+        public (Truck, WorkDay, DoublyNode<Order>) PrecomputeMutationValues() {
             Truck truck = randomTruck();
             WorkDay day = randomDay();
-            return (
-                randomOrder(),
-                truck, 
-                day,
-                randomTruckDayRouteOrder(truck, day)
-            );
+            return (truck, day, randomTruckDayRouteOrder(truck, day));
         }
 
         // Try to add an order into the current dayRoute before a certain routeOrder
-        public void TryAddOrder(Order order, Truck truck, WorkDay day, DoublyNode<Order> routeOrder) {
+        public void TryAddOrder(Truck truck, WorkDay day, DoublyNode<Order> routeOrder) {
             
-            Route dayRoute = truck.schedule.weekRoutes[(int)day];
-            Console.WriteLine("ADD");
+            Order order = randomOrder(); // order to try add
+            Route dayRoute = truck.schedule.weekRoutes[(int)day]; // dayroute of chosen routeOrder
 
             if (!(order.freq > 0))  
                 return;     // can only add order to route if it still has pickups left this week
@@ -260,20 +303,19 @@ namespace Infoopt
             if (dayRoute.timeToComplete >= maxDayTime || dayRoute.timeToComplete + order.emptyDur > maxDayTime)
                 return;     // return early if the order can never fit into this schedule.
 
-            float timeChange = Route.timeChangeCalcPutOrderBefore(order, routeOrder);
+            float timeChange = Schedule2.timeChangePutBeforeOrder(order, routeOrder);
             if (dayRoute.timeToComplete + timeChange > maxDayTime)
                 return;     // Calculate change in time and see if the order can fit in the schedule.
 
-
             // Calculate cost change and see if adding this order here is an improvement.
-            float costChange = Route.costChangeCalcPutOrderBefore(order, routeOrder);
+            float costChange = Schedule2.costChangePutBeforeOrder(order, routeOrder);
             if (costChange < 0) {   // If adding the order would result in a negative cost, add it always
                 dayRoute.putOrderBefore(order, routeOrder, timeChange);
-                Console.WriteLine("NORMAL Order added! Truck: " + ((Array.IndexOf(this.trucks, truck))+1) + ", Day: " + day);
+                //Console.WriteLine("NORMAL Order added! Truck: " + ((Array.IndexOf(this.trucks, truck))+1) + ", Day: " + day);
             }
             else if (random.NextDouble() < alpha) { // If worse, add node with a chance based on 'a' and 'T'
                 dayRoute.putOrderBefore(order, routeOrder, timeChange);
-                Console.WriteLine("ALPHA  Order added! Truck: " + ((Array.IndexOf(this.trucks, truck))+1) + ", Day: " + day);
+                //Console.WriteLine("ALPHA  Order added! Truck: " + ((Array.IndexOf(this.trucks, truck))+1) + ", Day: " + day);
             }
         }
 
@@ -282,35 +324,66 @@ namespace Infoopt
         public void TryRemoveOrder(Truck truck, WorkDay day, DoublyNode<Order> routeOrder)
         {
             Route dayRoute = truck.schedule.weekRoutes[(int)day];
-            Console.WriteLine("REMOVE");
+
             if (dayRoute.orders.Length < 3)
                 return; // can only remove if three orders present (including start and stop order)
-            
-            
-            
-            float timeChange = Route.timeChangeCalcRemoveOrder(routeOrder);
+    
+            float timeChange = Schedule2.timeChangeRemoveOrder(routeOrder);
             if (dayRoute.timeToComplete + timeChange > maxDayTime)
                 return; // Calculate change in time and see if the order can fit in the schedule.
 
-
             // Calculate cost change and see if adding this order here is an improvement.
-            float costChange = Route.costChangeCalcRemoveOrder(routeOrder);
+            float costChange = Schedule2.costChangeRemoveOrder(routeOrder);
             if (costChange < 0) // If removing the order would result in a negative cost, always choose to remove it.
             {
                 dayRoute.removeOrder(routeOrder, timeChange);
-                Console.WriteLine("NORMAL Order removed! Truck: " + ((Array.IndexOf(this.trucks, truck))+1) + ", Day: " + day);
+                //Console.WriteLine("NORMAL Order removed! Truck: " + ((Array.IndexOf(this.trucks, truck))+1) + ", Day: " + day);
             }
             else if (random.NextDouble() < alpha)  // TODO: If worse, add node with a chance based on 'a' and 'T'
             {
                 dayRoute.removeOrder(routeOrder, timeChange);
-                Console.WriteLine("ALPHA  Order removed! Truck: " + ((Array.IndexOf(this.trucks, truck))+1) + ", Day: " + day);
+                //Console.WriteLine("ALPHA  Order removed! Truck: " + ((Array.IndexOf(this.trucks, truck))+1) + ", Day: " + day);
             }
         }
 
         // Try to shift two orders in the current schedules.
-        public void TryShiftOrder()
+        public void TryShiftOrders(Truck truck, WorkDay day, DoublyNode<Order> routeOrder)
         {
-            Console.WriteLine("SHIFT");
+            (Truck truck2, WorkDay day2, DoublyNode<Order> routeOrder2) = PrecomputeMutationValues(); 
+            Route dayRoute = truck.schedule.weekRoutes[(int)day],
+                dayRoute2 = truck2.schedule.weekRoutes[(int)day2];
+
+            if (dayRoute.orders.isHeadOrTail(routeOrder) 
+                    || dayRoute2.orders.isHeadOrTail(routeOrder2) 
+                    || routeOrder.value == routeOrder2.value) 
+                return; // route orders should not be 'start' or 'stort', and no use in swapping with itself
+
+            float timeChange = Schedule2.timeChangeShiftOrders(routeOrder, routeOrder2),
+                timeChange2 = Schedule2.timeChangeShiftOrders(routeOrder2, routeOrder);
+            
+            if (dayRoute.timeToComplete + timeChange > maxDayTime 
+                    || dayRoute2.timeToComplete + timeChange2 > maxDayTime)
+                return; // Check if shift fits time-wise
+
+            // Calculate cost change and see if shifting these orders is an improvement.
+            float costChange = Schedule2.costChangeShiftOrders(routeOrder, routeOrder2),
+                costChange2 = Schedule2.costChangeShiftOrders(routeOrder2, routeOrder);
+
+            if (costChange + costChange2 < 0) {// If the shift would result in a negative cost, perform it always.
+                Route.shiftOrders(
+                    (dayRoute, routeOrder, timeChange),
+                    (dayRoute2, routeOrder2, timeChange2)
+                );
+                //Console.WriteLine("NORMAL Order shifted! Truck: " + (truck + 1) + ", Day: " + day);
+            }
+            else if (random.NextDouble() < alpha)   // If worse, perform the shift with a chance based on 'a' and 'T'
+            {
+                Route.shiftOrders(
+                    (dayRoute, routeOrder, timeChange),
+                    (dayRoute2, routeOrder2, timeChange2)
+                );
+                //Console.WriteLine("ALPHA  Order shifted! Truck: " + (truck + 1) + ", Day: " + day);
+            }
         }
 
         // Calculates the total cost of a solution by checking all its content.
@@ -335,6 +408,9 @@ namespace Infoopt
         }
 
 
+
+
+        
     }
 }
 

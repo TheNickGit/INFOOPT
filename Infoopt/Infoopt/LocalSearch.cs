@@ -210,14 +210,14 @@ namespace Infoopt
 
             if (costChange + costChange2 < 0) // If the shift would result in a negative cost, perform it always.
             {
-                weekSchedule[day].swapNodes(current, shiftTarget);
+                DoublyList<Order>.swapNodes(current, shiftTarget);
                 schedule.scheduleTimes[day] += timeChange + timeChange2;
                 //Console.WriteLine("NORMAL Order shifted! Truck: " + (truck + 1) + ", Day: " + day);
                 //Console.WriteLine(current.value + "" + shiftTarget.value);
             }
             else if (random.NextDouble() < alpha)   // If worse, perform the shift with a chance based on 'a' and 'T'
             {
-                weekSchedule[day].swapNodes(current, shiftTarget);
+                DoublyList<Order>.swapNodes(current, shiftTarget);
                 schedule.scheduleTimes[day] += timeChange + timeChange2;
                 //Console.WriteLine("ALPHA  Order shifted! Truck: " + (truck + 1) + ", Day: " + day);
                 //Console.WriteLine(current.value + "" + shiftTarget.value);
