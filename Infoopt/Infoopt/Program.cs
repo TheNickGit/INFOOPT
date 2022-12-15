@@ -1,12 +1,11 @@
 ﻿using System;
-using System.Net.Http.Headers;
 
 namespace Infoopt {
 
     class Program {
 
         // Config:
-        static int totalIterations = 10000000;
+        static int totalIterations = 1_000_000;
 
         public static Order
             startOrder = new Order(-1, "MAARHEEZE-start", 0, 0, 0, 0, 287, 56343016, 513026712), // The startlocation of each day.
@@ -18,83 +17,78 @@ namespace Infoopt {
             string orderFilePath = "./data/Orderbestand.csv"; // CHANGE TO ABSOLUTE PATH IF RUNNING IN DEBUG MODE
             string distancesFilePath = "./data/AfstandenMatrix.csv"; // CHANGE TO ABSOLUTE PATH IF RUNNING IN DEBUG MODE
             Order[] orders = fetchOrders(orderFilePath, distancesFilePath);
-
-            /// TODO Dit is een noodoplossing om de Remove goed te laten werken! Aangezien orderID en de plek in de array niet hetzelfde zijn, is de plek in de array niet te vinden.
-            /// Een efficientere datastructuur kan chiller zijn.
-            for (int i = 0; i < orders.Length; i++)
-                orders[i].spot = i;
-
+            
             printLSCheckerOutput(orders);
-            //testLS(orders);
         }
 
+
+        // test the LS with checker output
         public static void printLSCheckerOutput(Order[] orders) {
             LocalSearch LS = new LocalSearch(orders, startOrder, emptyingOrder);
-            while (LS.counter < totalIterations) LS.Iteration();
-
-            for(int i = 0; i<5; i++) {
-                int j = 1;
-                foreach(DoublyNode<Order> node in LS.truck1Schedule.weekSchedule[i]) {
-                    int orderId = node.value.nr;
-                    if (orderId >= 0) Console.WriteLine($"1; {i+1}; {j++}; {orderId}");
-                    else if (orderId == -2) Console.WriteLine($"1; {i+1}; {j++}; 0"); // last order (dump) should have order id 0
+            LS.Run(nIterations: totalIterations);
+            
+            int n = 1;
+            foreach(Truck truck in LS.trucks) {
+                foreach(int day in Enum.GetValues(typeof(WorkDay))) {
+                    int j = 0;
+                    foreach(DoublyNode<Order> node in truck.schedule.weekRoutes[day].orders) {
+                        int orderId = node.value.nr == -2 ? 0 : node.value.nr;
+                        if (orderId >= 0) Console.WriteLine($"{n}; {day+1}; {++j}; {orderId}");
+                    }
                 }
+                n++;
             }
-            for(int i = 0; i<5; i++) {
-                int j = 1;
-                foreach(DoublyNode<Order> node in LS.truck2Schedule.weekSchedule[i]) {
-                    int orderId = node.value.nr;
-                    if (orderId >= 0) Console.WriteLine($"2; {i+1}; {j++}; {orderId}");
-                    else if (orderId == -2) Console.WriteLine($"2; {i+1}; {j++}; 0"); // last order (dump) should have order id 0
-                }
-            }
-
         }
 
+        // test the LS with custom output
         public static void testLS(Order[] orders) {
             LocalSearch LS = new LocalSearch(orders, startOrder, emptyingOrder);
-            Console.WriteLine("TOTAL COST: " + LS.CalcTotalCost());
+            float oldCost = LS.CalcTotalCost();
+            
+            // TEST: Do 1.000.000 iterations.
+            LS.Run(nIterations: totalIterations);
 
-            // Perform iterations
-            while (LS.counter < totalIterations)
-            {
-                LS.Iteration();
+            Console.WriteLine("OLD TOTAL COST:\t" + oldCost);
+            Console.WriteLine("NEW TOTAL COST:\t" + LS.CalcTotalCost());
+
+            int i = 0;
+            foreach(Truck truck in LS.trucks) {
+                string msg = $"========== TRUCK {++i} ==========\n{truck.schedule.Display()}";
+                Console.Write(msg);
             }
 
-            Console.WriteLine("TOTAL COST: " + LS.CalcTotalCost());
-            for (int i = 0; i < 5; i++)
-                Console.WriteLine("Truck1 day " + i + ", time: " + LS.truck1Schedule.scheduleTimes[i]);
-            for (int i = 0; i < 5; i++)
-                Console.WriteLine("Truck2 day " + i + ", time: " + LS.truck2Schedule.scheduleTimes[i]);
-
-            Console.WriteLine("-- Schema van truck 1 dag 1 -- lengte: " + LS.truck1Schedule.weekSchedule[0].Length);
-            foreach (DoublyNode<Order> node in LS.truck1Schedule.weekSchedule[0])
-                Console.WriteLine($"{node.value}");
-
-
+            testLSRouteTimes(LS);
         }
 
-        public static void testLS2(Order[] orders) {
-            LS2 LS = new LS2(orders, startOrder, emptyingOrder);
-            Console.WriteLine("TOTAL COST: " + LS.CalcTotalCost());
-
-
-            // TEST: Do 100.000 iterations.
-            LS.Run(nIterations: 1_000);
-
-            Console.WriteLine("TOTAL COST: " + LS.CalcTotalCost());
+        public static void testLSRouteTimes(LocalSearch LS) {
+            // check
             foreach(Truck truck in LS.trucks) {
-                int i = 0;
-                foreach(int day in Enum.GetValues(typeof(WorkDay))) {
-                    Console.WriteLine($"Truck{++i} day {day}, time: {truck.schedule.weekRoutes[day].timeToComplete}");
+                foreach(Route dayRoute in truck.schedule.weekRoutes) {
+                    Console.WriteLine($"Route time:\t{Math.Round(dayRoute.timeToComplete, 2)} (accum.)\t{Math.Round(routeTime(dayRoute), 2)} (really)");
                 }
             }
-
-            Route firstTruckFirstDayRoute = LS.trucks[0].schedule.weekRoutes[0];
-            Console.WriteLine("-- Schema van truck 1 dag 1 -- lengte: " + firstTruckFirstDayRoute.orders.Length);
-            foreach (DoublyNode<Order> node in firstTruckFirstDayRoute.orders)
-                Console.Write($"{node.value} \n");
         }
+
+        public static float routeTime(Route route) {
+            float t = 0;
+            foreach(DoublyNode<Order> node in route.orders) {
+                
+                if (route.orders.isHead(node)) {
+                    t += node.value.distanceTo(node.next.value).travelDur / 60.0f;
+                }
+                else if (route.orders.isTail(node)) {
+                    t += 30;    // truckUnloadTIme
+                }
+                else {
+                    t += node.value.distanceTo(node.next.value).travelDur / 60.0f;
+                    t += node.value.emptyDur;
+                }
+            }
+            return t;
+        }
+
+
+
 
         // get all orders and bind all distance-data to respective orders
         public static Order[] fetchOrders(string orderFilePath, string distancesFilePath) {
@@ -120,9 +114,6 @@ namespace Infoopt {
 
     }
     
-
-
-
 
 }
 

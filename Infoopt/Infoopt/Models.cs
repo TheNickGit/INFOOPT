@@ -1,9 +1,83 @@
 ﻿using System;
-
+using System.Collections.Generic;
+using System.Text;
 
 namespace Infoopt
 {
+    
+    // Truck is responsible for holding a schedule of weekly routes for orders to pick up
+    class Truck {
+        
+        public Schedule schedule;
+        public static float unloadTime = 30.0f;
 
+        public Truck(Order startOrder, Order stopOrder) {
+            this.schedule = new Schedule(startOrder, stopOrder, Truck.unloadTime);
+        }
+
+
+    }
+
+
+    enum WorkDay {
+        Mon, Tue, Wed, Thu, Fri
+    }
+
+
+    // The route is repsonsible for holding the sequential list of orders,
+    // and keepint track of the total time for the route to complete
+    class Route {
+
+        public DoublyList<Order> orders;
+        public float timeToComplete = 0.0f;
+
+        public Route(Order startOrder, Order stopOrder) {
+            this.orders = new DoublyList<Order>(
+                new DoublyNode<Order>(startOrder),
+                new DoublyNode<Order>(stopOrder)
+            );
+        }
+
+        // Display all route orders (custom print)
+        public string Display() {
+            string msg = "";
+            foreach(DoublyNode<Order> order in this.orders) {
+                msg += $"{order.value.Display()}\n";
+            }
+            return msg;
+        }
+
+
+        // puts an order before another order in this route (with time change dt)
+        public void putOrderBefore(Order order, DoublyNode<Order> routeOrder, float dt) {
+            this.orders.insertBeforeNode(order, routeOrder);    // put order before a order already in the route
+            this.timeToComplete += dt;                          // modify total route time to complete 
+            order.decreaseFrequency();                          // signal that order has been placed into a route; one less pickup to do
+        }
+
+         // removes an order in this route (with time change dt)
+        public void removeOrder(DoublyNode<Order> routeOrder, float dt) {
+            this.orders.ejectAfterNode(routeOrder.prev);        // remove order from route
+            this.timeToComplete += dt;                          // modify total route time to complete
+            routeOrder.value.increaseFrequency();               // signal that order has been removed from a route; one more pickup to do again
+        }
+
+        // swaps two orders, can be within route or between routes (with time change dt for each route)
+        public static void shiftOrders(
+                (Route route, DoublyNode<Order> routeOrder, float dt) o,
+                (Route route, DoublyNode<Order> routeOrder, float dt) o2
+            ) 
+        {
+            DoublyList<Order>.swapNodes(o.routeOrder, o2.routeOrder);   // swap values of nodes (orders)
+            o.route.timeToComplete += o.dt;                             // modify total route time to complete
+            o2.route.timeToComplete += o2.dt;                           // modify total route2 time to complete
+        }
+
+    }
+
+
+    // Describes a placed order for garbage pickup (as defined in ./data/Orderbestand.csv)
+    // and manages/contains the distance between orders (as defined in ./data/AfstandenMatrix.csv)
     class Order
     {
 
@@ -45,8 +119,8 @@ namespace Infoopt
             this.coord = (xCoord, yCoord);
         }
 
-        // TODO: replace by console-input line format for route checker?
-        public override string ToString()
+        // Display order specification (custom print)
+        public string Display()
         {
             return String.Format("{0} | {1} [freq:{2}, amt:{3}, vol:{4}]",
                 this.distId.ToString().PadLeft(4),
@@ -67,4 +141,5 @@ namespace Infoopt
             this.freq += 1;
         }
     }
+
 }
