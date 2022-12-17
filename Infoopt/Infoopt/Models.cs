@@ -90,6 +90,7 @@ namespace Infoopt
             spot;                       // TODO: Deze is er alleen even als tussentijdse oplossing om orders te koppelen aan hun plek in de orders array
         public float emptyDur;          // time it takes to empty the bins of this order
         public (int X, int Y) coord;    // coordinates of order
+        public bool available;          // signals whether the order is currently available to be taken
 
 
         // distances to all other orders (index = distId of other order)
@@ -117,6 +118,8 @@ namespace Infoopt
             this.emptyDur = emptyDur * 60;
             this.distId = distId;
             this.coord = (xCoord, yCoord);
+            this.available = true;
+
         }
 
         // Display order specification (custom print)
@@ -133,12 +136,14 @@ namespace Infoopt
 
         // decrease the order frequency by one (due to the order having been placed into a route)
         public void decreaseFrequency() {
-            this.freq -= 1;
+            //this.freq -= 1;
+            this.available = false;
         }
 
         // increase the order frequency by one (due to the order having been removed from a route)
         public void increaseFrequency() {
-            this.freq += 1;
+            //this.freq += 1;
+            this.available = true;
         }
     }
 

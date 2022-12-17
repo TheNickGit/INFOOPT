@@ -54,8 +54,6 @@ namespace Infoopt
             // Time decreases
             float currentDistanceGain = prev.distanceTo(current).travelDur  ;
 
-
-
             // Time increases
             float newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(current).travelDur)  ;
             float pickupTimeCost = newOrder.emptyDur;

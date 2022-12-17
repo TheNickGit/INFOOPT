@@ -33,6 +33,18 @@ namespace Infoopt
             WorkDay[] days = (WorkDay[]) Enum.GetValues(typeof(WorkDay));
             return days[random.Next(days.Length)];
         }
+
+        public (WorkDay, WorkDay)  randomDay2()
+        {
+            WorkDay[] days = (WorkDay[])Enum.GetValues(typeof(WorkDay));
+            WorkDay day1 = days[random.Next(2)]; // Mon or Tue
+            WorkDay day2;
+            if (day1 == WorkDay.Mon)
+                day2 = WorkDay.Thu; // Mon + Thu combo
+            else
+                day2 = WorkDay.Fri; // Tue + Fri combo
+            return (day1, day2);
+        }
         public Route randomTruckDayRoute(Truck truck) => truck.schedule.weekRoutes[(int)randomDay()];
         public DoublyNode<Order> randomTruckDayRouteOrder(Truck truck, WorkDay day) {
             Route route = truck.schedule.weekRoutes[(int)day];
@@ -41,11 +53,11 @@ namespace Infoopt
         }
 
 
-        public LocalSearch(Order[] orders, Order startOrder, Order emtpyingOrder) {
+        public LocalSearch(Order[] orders, Order startOrder, Order emptyingOrder) {
             this.orders = orders;
             this.trucks = new Truck[2] { 
-                new Truck(startOrder, emtpyingOrder), 
-                new Truck(startOrder, emtpyingOrder) };
+                new Truck(startOrder, emptyingOrder), 
+                new Truck(startOrder, emptyingOrder) };
         }
 
 
@@ -72,7 +84,7 @@ namespace Infoopt
                 TryAddOrder(truck, day, routeOrder);
             else if (choice >= chanceAdd && choice < chanceAdd + chanceRemove)
                 TryRemoveOrder(truck, day, routeOrder);
-            else
+            else if (choice >= chanceAdd + chanceRemove && choice < chanceAdd + chanceRemove + chanceShift)
                 TryShiftOrders(truck, day, routeOrder);
         }
 
@@ -87,27 +99,70 @@ namespace Infoopt
         public void TryAddOrder(Truck truck, WorkDay day, DoublyNode<Order> routeOrder) {
             
             Order order = randomOrder(); // order to try add
-            Route dayRoute = truck.schedule.weekRoutes[(int)day]; // dayroute of chosen routeOrder
+            if (!order.available)
+                return;
+            if (order.freq == 1)
+                TryAddOrder1(order);
+            else if (order.freq == 2)
+                TryAddOrder2(order);
+        }
 
-            if (!(order.freq > 0))  
-                return;     // can only add order to route if it still has pickups left this week
-
-            if (dayRoute.timeToComplete >= maxDayTime || dayRoute.timeToComplete + order.emptyDur > maxDayTime)
-                return;     // return early if the order can never fit into this schedule.
-
-            float timeChange = Schedule.timeChangePutBeforeOrder(order, routeOrder);
+        /// <summary>
+        /// Try to add an order of frequency 1 to a route.
+        /// </summary>
+        public void TryAddOrder1(Order order)
+        {
+            Truck truck = randomTruck();
+            WorkDay day = randomDay();
+            Route dayRoute = truck.schedule.weekRoutes[(int)day];
+            DoublyNode<Order> target = randomTruckDayRouteOrder(truck, day);  
+            
+            // Calculate change in time and see if the order can fit in the schedule.
+            float timeChange = Schedule.timeChangePutBeforeOrder(order, target);
             if (dayRoute.timeToComplete + timeChange > maxDayTime)
-                return;     // Calculate change in time and see if the order can fit in the schedule.
+                return;
 
             // Calculate cost change and see if adding this order here is an improvement.
-            float costChange = Schedule.costChangePutBeforeOrder(order, routeOrder);
-            if (costChange < 0) {   // If adding the order would result in a negative cost, add it always
-                dayRoute.putOrderBefore(order, routeOrder, timeChange);
-                //Console.WriteLine("NORMAL Order added! Truck: " + ((Array.IndexOf(this.trucks, truck))+1) + ", Day: " + day);
+            float costChange = Schedule.costChangePutBeforeOrder(order, target);
+            if (costChange < 0) // If adding the order would result in a negative cost, add it always.
+                dayRoute.putOrderBefore(order, target, timeChange);
+            else if (random.NextDouble() < alpha)   // If worse, add node with a chance based on the simulated annealing variables.
+                dayRoute.putOrderBefore(order, target, timeChange);
+        }
+
+        /// <summary>
+        /// Try to add an order of frequency 2 to a route.
+        /// </summary>
+        public void TryAddOrder2(Order order)
+        {
+            Truck truck1 = randomTruck();
+            Truck truck2 = randomTruck();
+            (WorkDay, WorkDay) days = randomDay2();
+            WorkDay day1 = days.Item1;
+            WorkDay day2 = days.Item2;
+            Route dayRoute1 = truck1.schedule.weekRoutes[(int)day1];
+            DoublyNode<Order> target1 = randomTruckDayRouteOrder(truck1, day1);
+            Route dayRoute2 = truck2.schedule.weekRoutes[(int)day2];
+            DoublyNode<Order> target2 = randomTruckDayRouteOrder(truck2, day2);
+
+            // Calculate change in time and see if the order can fit in the schedule.
+            float timeChange1 = Schedule.timeChangePutBeforeOrder(order, target1);
+            float timeChange2 = Schedule.timeChangePutBeforeOrder(order, target2);
+            if (dayRoute1.timeToComplete + timeChange1 > maxDayTime || dayRoute2.timeToComplete + timeChange2 > maxDayTime)
+                return;
+
+            // Calculate cost change and see if adding this order here is an improvement.
+            float costChange1 = Schedule.costChangePutBeforeOrder(order, target1);
+            float costChange2 = Schedule.costChangePutBeforeOrder(order, target2);
+            if (costChange1 < 0 && costChange2 < 0) // If adding the order would result in a negative cost, add it always.
+            {
+                dayRoute1.putOrderBefore(order, target1, timeChange1);
+                dayRoute2.putOrderBefore(order, target2, timeChange2);
             }
-            else if (random.NextDouble() < alpha) { // If worse, add node with a chance based on 'a' and 'T'
-                dayRoute.putOrderBefore(order, routeOrder, timeChange);
-                //Console.WriteLine("ALPHA  Order added! Truck: " + ((Array.IndexOf(this.trucks, truck))+1) + ", Day: " + day);
+            else if (random.NextDouble() < alpha)   // If worse, add node with a chance based on the simulated annealing variables.
+            {
+                dayRoute1.putOrderBefore(order, target1, timeChange1);
+                dayRoute2.putOrderBefore(order, target2, timeChange2);
             }
         }
 
@@ -115,6 +170,10 @@ namespace Infoopt
         // Try to remove an order from the current schedules.
         public void TryRemoveOrder(Truck truck, WorkDay day, DoublyNode<Order> routeOrder)
         {
+            // TODO: Werkt alleen met freq = 1
+            if (routeOrder.value.freq > 1)
+                return;
+
             Route dayRoute = truck.schedule.weekRoutes[(int)day];
 
             if (dayRoute.orders.Length < 3)
@@ -144,6 +203,10 @@ namespace Infoopt
             (Truck truck2, WorkDay day2, DoublyNode<Order> routeOrder2) = PrecomputeMutationValues(); 
             Route dayRoute = truck.schedule.weekRoutes[(int)day],
                 dayRoute2 = truck2.schedule.weekRoutes[(int)day2];
+
+            // TODO: Werkt alleen met freq = 1;
+            if (routeOrder.value.freq > 1 || routeOrder2.value.freq > 1)
+                return;
 
             if (dayRoute.orders.isHeadOrTail(routeOrder) 
                     || dayRoute2.orders.isHeadOrTail(routeOrder2) 

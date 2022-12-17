@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace Infoopt {
 
@@ -18,14 +19,20 @@ namespace Infoopt {
             string distancesFilePath = "./data/AfstandenMatrix.csv"; // CHANGE TO ABSOLUTE PATH IF RUNNING IN DEBUG MODE
             Order[] orders = fetchOrders(orderFilePath, distancesFilePath);
 
-            printLSCheckerOutput(orders);
-
+            LocalSearch LS = printLSCheckerOutput(orders);
+            // DEBUG
+            int i = 0;
+            foreach (Truck truck in LS.trucks)
+            {
+                string msg = $"========== TRUCK {++i} ==========\n{truck.schedule.Display()}";
+                Console.Write(msg);
+            }
             //testLS(orders);
         }
 
 
         // test the LS with checker output
-        public static void printLSCheckerOutput(Order[] orders) {
+        public static LocalSearch printLSCheckerOutput(Order[] orders) {
             LocalSearch LS = new LocalSearch(orders, startOrder, emptyingOrder);
             LS.Run(nIterations: totalIterations);
             
@@ -42,13 +49,7 @@ namespace Infoopt {
                 n++;
             }
 
-            // DEBUG
-            int i = 0;
-            foreach (Truck truck in LS.trucks)
-            {
-                string msg = $"========== TRUCK {++i} ==========\n{truck.schedule.Display()}";
-                Console.Write(msg);
-            }
+            return LS;
         }
 
         // test the LS with custom output
