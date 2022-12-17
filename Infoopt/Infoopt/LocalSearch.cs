@@ -21,7 +21,7 @@ namespace Infoopt
         public static double
             chanceAdd = 0.20,
             chanceRemove = 0.20,
-            chanceShift = 0.60,
+            chanceShift = 0.40,
             alpha = 0.005; // Chance to accept a worse solution
 
 
