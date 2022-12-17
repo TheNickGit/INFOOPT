@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 
@@ -32,7 +33,7 @@ namespace Infoopt
             string[] args = line.Split(';');
             return new Order(
                 int.Parse(args[0]), args[1].Trim(), (int)char.GetNumericValue(args[2][0]),
-                int.Parse(args[3]), int.Parse(args[4]), float.Parse(args[5]),
+                int.Parse(args[3]), int.Parse(args[4]), float.Parse(args[5], CultureInfo.InvariantCulture),
                 int.Parse(args[6]), int.Parse(args[7]), int.Parse(args[8])
             );
         }

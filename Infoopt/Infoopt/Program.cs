@@ -5,20 +5,22 @@ namespace Infoopt {
     class Program {
 
         // Config:
-        static int totalIterations = 1_000_000;
+        static int totalIterations = 10_000_000;
 
         public static Order
             startOrder = new Order(-1, "MAARHEEZE-start", 0, 0, 0, 0, 287, 56343016, 513026712), // The startlocation of each day.
             emptyingOrder = new Order(-2, "MAARHEEZE-stort", 0, 0, 0, 30, 287, 56343016, 513026712); // The 'stortplaats'
 
-        static void Main(string[] args) {
-
+        static void Main(string[] args)
+        {
             // parse orders and display them
             string orderFilePath = "./data/Orderbestand.csv"; // CHANGE TO ABSOLUTE PATH IF RUNNING IN DEBUG MODE
             string distancesFilePath = "./data/AfstandenMatrix.csv"; // CHANGE TO ABSOLUTE PATH IF RUNNING IN DEBUG MODE
             Order[] orders = fetchOrders(orderFilePath, distancesFilePath);
-            
+
             printLSCheckerOutput(orders);
+
+            //testLS(orders);
         }
 
 
@@ -37,6 +39,14 @@ namespace Infoopt {
                     }
                 }
                 n++;
+            }
+
+            // DEBUG
+            int i = 0;
+            foreach (Truck truck in LS.trucks)
+            {
+                string msg = $"========== TRUCK {++i} ==========\n{truck.schedule.Display()}";
+                Console.Write(msg);
             }
         }
 
@@ -74,13 +84,13 @@ namespace Infoopt {
             foreach(DoublyNode<Order> node in route.orders) {
                 
                 if (route.orders.isHead(node)) {
-                    t += node.value.distanceTo(node.next.value).travelDur / 60.0f;
+                    t += node.value.distanceTo(node.next.value).travelDur;
                 }
                 else if (route.orders.isTail(node)) {
                     t += 30;    // truckUnloadTIme
                 }
                 else {
-                    t += node.value.distanceTo(node.next.value).travelDur / 60.0f;
+                    t += node.value.distanceTo(node.next.value).travelDur;
                     t += node.value.emptyDur;
                 }
             }

@@ -14,14 +14,14 @@ namespace Infoopt
         public Order[] orders;
         public Truck[] trucks;
 
-        public static int maxDayTime = 720;
+        public static int maxDayTime = 43200;
 
 
         // Config:
         public static double
-            chanceAdd = 0.20,
-            chanceRemove = 0.20,
-            chanceShift = 0.60,
+            chanceAdd = 0.10,
+            chanceRemove = 0.05,
+            chanceShift = 0.85,
             alpha = 0.005; // Chance to accept a worse solution
 
 

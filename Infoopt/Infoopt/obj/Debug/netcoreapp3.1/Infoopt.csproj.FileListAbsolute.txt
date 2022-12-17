@@ -5,7 +5,6 @@ C:\Users\nvrie\OneDrive\Documenten\Git Repositories\infoopt\Infoopt\Infoopt\bin\
 C:\Users\nvrie\OneDrive\Documenten\Git Repositories\infoopt\Infoopt\Infoopt\bin\Debug\netcoreapp3.1\Infoopt.dll
 C:\Users\nvrie\OneDrive\Documenten\Git Repositories\infoopt\Infoopt\Infoopt\bin\Debug\netcoreapp3.1\Infoopt.pdb
 C:\Users\nvrie\OneDrive\Documenten\Git Repositories\infoopt\Infoopt\Infoopt\obj\Debug\netcoreapp3.1\Infoopt.csproj.AssemblyReference.cache
-C:\Users\nvrie\OneDrive\Documenten\Git Repositories\infoopt\Infoopt\Infoopt\obj\Debug\netcoreapp3.1\Infoopt.GeneratedMSBuildEditorConfig.editorconfig
 C:\Users\nvrie\OneDrive\Documenten\Git Repositories\infoopt\Infoopt\Infoopt\obj\Debug\netcoreapp3.1\Infoopt.AssemblyInfoInputs.cache
 C:\Users\nvrie\OneDrive\Documenten\Git Repositories\infoopt\Infoopt\Infoopt\obj\Debug\netcoreapp3.1\Infoopt.AssemblyInfo.cs
 C:\Users\nvrie\OneDrive\Documenten\Git Repositories\infoopt\Infoopt\Infoopt\obj\Debug\netcoreapp3.1\Infoopt.csproj.CoreCompileInputs.cache
@@ -26,3 +25,4 @@ C:\Users\jjand\Documents\GitHub\infoopt\Infoopt\Infoopt\obj\Debug\netcoreapp3.1\
 C:\Users\jjand\Documents\GitHub\infoopt\Infoopt\Infoopt\obj\Debug\netcoreapp3.1\Infoopt.dll
 C:\Users\jjand\Documents\GitHub\infoopt\Infoopt\Infoopt\obj\Debug\netcoreapp3.1\Infoopt.pdb
 C:\Users\jjand\Documents\GitHub\infoopt\Infoopt\Infoopt\obj\Debug\netcoreapp3.1\Infoopt.genruntimeconfig.cache
+C:\Users\nvrie\OneDrive\Documenten\Git Repositories\infoopt\Infoopt\Infoopt\obj\Debug\netcoreapp3.1\Infoopt.GeneratedMSBuildEditorConfig.editorconfig

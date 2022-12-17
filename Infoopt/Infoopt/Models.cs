@@ -114,7 +114,7 @@ namespace Infoopt
             this.freq = freq;
             this.binAmt = binAmt;
             this.binVol = binVol;
-            this.emptyDur = emptyDur;
+            this.emptyDur = emptyDur * 60;
             this.distId = distId;
             this.coord = (xCoord, yCoord);
         }

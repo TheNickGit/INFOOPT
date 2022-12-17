@@ -29,7 +29,7 @@ namespace Infoopt
             string msg = "";
             int day = 0;
             foreach(Route dayRoute in this.weekRoutes) {
-                msg += $"----- {(WorkDay)(day++)}  ({Math.Round(dayRoute.timeToComplete, 2)} min.) ------\n{dayRoute.Display()}";
+                msg += $"----- {(WorkDay)(day++)}  ({Math.Round(dayRoute.timeToComplete, 1)} sec. | {Math.Round(dayRoute.timeToComplete / 60, 1)} min.) ------\n{dayRoute.Display()}";
             }
             return msg;
         }
@@ -52,12 +52,12 @@ namespace Infoopt
                 current = routeOrder.value; 
 
             // Time decreases
-            float currentDistanceGain = prev.distanceTo(current).travelDur / 60.0f;
+            float currentDistanceGain = prev.distanceTo(current).travelDur  ;
 
 
 
             // Time increases
-            float newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(current).travelDur) / 60.0f;
+            float newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(current).travelDur)  ;
             float pickupTimeCost = newOrder.emptyDur;
 
             // Calculate change: This number means how much additional time is spend if the order is added
@@ -71,11 +71,11 @@ namespace Infoopt
                 current = routeOrder.value; 
 
             // Gains
-            float currentDistanceGain = prev.distanceTo(current).travelDur / 60.0f;
+            float currentDistanceGain = prev.distanceTo(current).travelDur  ;
             float pickupCostGain = newOrder.emptyDur * 3;
 
             // Costs
-            float newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(current).travelDur) / 60.0f;
+            float newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(current).travelDur)  ;
             float pickupTimeCost = newOrder.emptyDur;
 
             // Calculate change: costs - gains (so a negative result is good!)
@@ -91,10 +91,10 @@ namespace Infoopt
 
             // Time decreases
             float pickupTimeGain = current.emptyDur;
-            float currentDistanceGain = (prev.distanceTo(current).travelDur + current.distanceTo(next).travelDur) / 60.0f;
+            float currentDistanceGain = (prev.distanceTo(current).travelDur + current.distanceTo(next).travelDur)  ;
 
             // time increases
-            float newDistanceCost = prev.distanceTo(next).travelDur / 60.0f;
+            float newDistanceCost = prev.distanceTo(next).travelDur  ;
 
             // Calcuate change: This number means how much time is spend more/less when this order is removed.
             return newDistanceCost - (pickupTimeGain + currentDistanceGain);
@@ -108,11 +108,11 @@ namespace Infoopt
                 next = routeOrder.next.value;
             
             // Gains
-            float currentDistanceGain = (prev.distanceTo(current).travelDur + current.distanceTo(next).travelDur) / 60.0f;
+            float currentDistanceGain = (prev.distanceTo(current).travelDur + current.distanceTo(next).travelDur)  ;
             float pickupTimeGain = current.emptyDur;
 
             // Costs
-            float newDistanceCost =  prev.distanceTo(next).travelDur / 60.0f;
+            float newDistanceCost =  prev.distanceTo(next).travelDur  ;
             float pickupCost = current.emptyDur * 3;
 
             // Calculate change: costs - gains (so a negative result is good!)
@@ -129,17 +129,17 @@ namespace Infoopt
 
             // Time decreases
             float pickupTimeGain = oldOrder.emptyDur;
-            float oldDistanceGain = (prev.distanceTo(oldOrder).travelDur + oldOrder.distanceTo(next).travelDur) / 60.0f;
+            float oldDistanceGain = (prev.distanceTo(oldOrder).travelDur + oldOrder.distanceTo(next).travelDur)  ;
 
             // Time increases
             float pickupTimeCost = newOrder.emptyDur;
             float newDistanceCost;
             if (newOrder == next)
-                newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(oldOrder).travelDur) / 60.0f;
+                newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(oldOrder).travelDur)  ;
             else if (newOrder == prev)
-                newDistanceCost = (oldOrder.distanceTo(newOrder).travelDur + newOrder.distanceTo(next).travelDur) / 60.0f;
+                newDistanceCost = (oldOrder.distanceTo(newOrder).travelDur + newOrder.distanceTo(next).travelDur)  ;
             else
-                newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(next).travelDur) / 60.0f;
+                newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(next).travelDur)  ;
 
             if (withinRoute) // no change in pickup time when swapping orders within the same route
                 return newDistanceCost - oldDistanceGain; 
@@ -155,16 +155,16 @@ namespace Infoopt
                 newOrder = newRouteOrder.value;
             
             // Gains
-            float oldDistanceGain = (prev.distanceTo(oldOrder).travelDur + oldOrder.distanceTo(next).travelDur) / 60.0f;
+            float oldDistanceGain = (prev.distanceTo(oldOrder).travelDur + oldOrder.distanceTo(next).travelDur)  ;
 
             // Costs
             float newDistanceCost;
             if (newOrder == next)
-                newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(oldOrder).travelDur) / 60.0f;
+                newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(oldOrder).travelDur)  ;
             else if (newOrder == prev)
-                newDistanceCost = (oldOrder.distanceTo(newOrder).travelDur + newOrder.distanceTo(next).travelDur) / 60.0f;
+                newDistanceCost = (oldOrder.distanceTo(newOrder).travelDur + newOrder.distanceTo(next).travelDur)  ;
             else
-                newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(next).travelDur) / 60.0f;
+                newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(next).travelDur)  ;
 
             // Calculate change: costs - gains (so a negative result is good!)
             return newDistanceCost - oldDistanceGain;
