@@ -8,8 +8,8 @@ namespace Infoopt {
         static int totalIterations = 10_000_000;
 
         public static Order
-            startOrder = new Order(-1, "MAARHEEZE-start", 0, 0, 0, 0, 287, 56343016, 513026712), // The startlocation of each day.
-            emptyingOrder = new Order(-2, "MAARHEEZE-stort", 0, 0, 0, 30, 287, 56343016, 513026712); // The 'stortplaats'
+            startOrder = new Order(0, "MAARHEEZE-start", 0, 0, 0, 0, 287, 56343016, 513026712), // The startlocation of each day.
+            emptyingOrder = new Order(0, "MAARHEEZE-stort", 0, 0, 0, 30, 287, 56343016, 513026712); // The 'stortplaats'
 
         static void Main(string[] args)
         {
@@ -34,8 +34,9 @@ namespace Infoopt {
                 foreach(int day in Enum.GetValues(typeof(WorkDay))) {
                     int j = 0;
                     foreach(DoublyNode<Order> node in truck.schedule.weekRoutes[day].orders) {
-                        int orderId = node.value.nr == -2 ? 0 : node.value.nr;
-                        if (orderId >= 0) Console.WriteLine($"{n}; {day+1}; {++j}; {orderId}");
+                        int orderId = node.value.nr;
+                        if (j>0) Console.WriteLine($"{n}; {day+1}; {j}; {orderId}");
+                        j++;
                     }
                 }
                 n++;
