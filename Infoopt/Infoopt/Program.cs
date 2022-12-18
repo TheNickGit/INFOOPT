@@ -148,8 +148,8 @@ namespace Infoopt {
             while(!(randOrder.freq > 0)) randOrder = LS.randomOrder();
             while(!(randOrder2.freq > 0)) randOrder2 = LS.randomOrder();
 
-            LS.TryAddOrder(randOrder, truck, day, route.orders.tail);
-            LS.TryAddOrder(randOrder2, truck, day, route.orders.tail);
+            LS.ForceAddOrder(randOrder, truck, day, route.orders.tail);
+            LS.ForceAddOrder(randOrder2, truck, day, route.orders.tail);
             
             float durToOrder1 = route.orders.head.value.distanceTo(randOrder).travelDur,
                   durFromOrder1To2 = randOrder.distanceTo(randOrder2).travelDur,
@@ -182,8 +182,8 @@ namespace Infoopt {
             while(!(randOrder2.freq > 0)) randOrder2 = LS.randomOrder();
 
 
-            LS.TryAddOrder(randOrder, truck, day, route.orders.tail);
-            LS.TryAddOrder(randOrder2, truck, day, route.orders.tail);
+            LS.ForceAddOrder(randOrder, truck, day, route.orders.tail);
+            LS.ForceAddOrder(randOrder2, truck, day, route.orders.tail);
 
             float rt;
             bool removeSecond = LS.random.NextDouble() <= 0.5;
@@ -225,8 +225,8 @@ namespace Infoopt {
             while(!(randOrder.freq > 0)) randOrder = LS.randomOrder();
             while(!(randOrder2.freq > 0)) randOrder2 = LS.randomOrder();
             
-            LS.TryAddOrder(randOrder, truck, day, route.orders.tail);
-            LS.TryAddOrder(randOrder2, truck, day, route.orders.tail);
+            LS.ForceAddOrder(randOrder, truck, day, route.orders.tail);
+            LS.ForceAddOrder(randOrder2, truck, day, route.orders.tail);
 
 
             LS.TryShiftOrders(truck, day, route.orders.head.next, route.orders.tail.prev);
@@ -266,8 +266,8 @@ namespace Infoopt {
             while(!(randOrder.freq > 0)) randOrder = LS.randomOrder();
             while(!(randOrder2.freq > 0)) randOrder2 = LS.randomOrder();
 
-            LS.TryAddOrder(randOrder, truck, day, route.orders.tail);
-            LS.TryAddOrder(randOrder2, truck2, day2, route2.orders.tail);
+            LS.ForceAddOrder(randOrder, truck, day, route.orders.tail);
+            LS.ForceAddOrder(randOrder2, truck2, day2, route2.orders.tail);
 
 
             LS.TrySwapOrders(truck, day, route.orders.head.next, truck2, day2, route2.orders.tail.prev);
