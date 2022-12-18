@@ -193,7 +193,7 @@ namespace Infoopt
             p = Math.Exp(totalCostChange / T);
 
             // Add the order if cost is negative or with a certain chance
-            if (totalCostChange < 0 || random.NextDouble() < p) 
+            if (totalCostChange < 0 || random.NextDouble() < T) 
             {
                 for(int i = 0; i < order.freq; i++)
                     targetRouteList[i].Item2.putOrderBefore(order, targetRouteList[i].Item1, timeChanges[i]);
@@ -207,7 +207,7 @@ namespace Infoopt
         {
             float timeChange = Schedule.timeChangePutBeforeOrder(order, node);
             float costChange = Schedule.costChangePutBeforeOrder(order, node);
-            if (costChange < 0 || random.NextDouble() < alpha)
+            if (costChange < 0 || random.NextDouble() < T)
             {
                 Route route = truck.schedule.weekRoutes[(int)day];
                 route.putOrderBefore(order, node, timeChange);
@@ -275,7 +275,7 @@ namespace Infoopt
                 totalCostChange += Schedule.costChangeRemoveOrder(targetRouteList[i].Item1);
 
             // Remove order
-            if (totalCostChange < 0 || random.NextDouble() <= alpha) 
+            if (totalCostChange < 0 || random.NextDouble() <= T) 
             {
                 for (int i = 0; i < order.freq; i++)
                     targetRouteList[i].Item2.removeOrder(targetRouteList[i].Item1, timeChanges[i]);
@@ -316,7 +316,7 @@ namespace Infoopt
                 );
                 //Console.WriteLine("NORMAL Order swapped! Truck: " + (truck + 1) + ", Day: " + day);
             }
-            else if (random.NextDouble() <= alpha)   // If worse, perform the swap with a chance based on 'a' and 'T'
+            else if (random.NextDouble() <= T)   // If worse, perform the swap with a chance based on 'a' and 'T'
             {
                 Route.swapOrders(
                     (dayRoute2, routeOrder2, timeChange2),
@@ -346,12 +346,12 @@ namespace Infoopt
 
             if (costChange < 0) {// If the shift would result in a negative cost, perform it always.
                 dayRoute.shiftOrders(routeOrder, routeOrder2, dayRoute, timeChange);
-                //Console.WriteLine("NORMAL Order shifted! Truck: " + (truck + 1) + ", Day: " + day);
+                //Console.WriteLine("NORMAL Order shifted! Truck: " + (truck) + ", Day: " + day);
             }
-            else if (random.NextDouble() < alpha)   // If worse, perform the shift with a chance based on 'a' and 'T'
+            else if (random.NextDouble() < T)   // If worse, perform the shift with a chance based on 'a' and 'T'
             {
                 dayRoute.shiftOrders(routeOrder, routeOrder2, dayRoute, timeChange);
-                //Console.WriteLine("ALPHA  Order shifted! Truck: " + (truck + 1) + ", Day: " + day);
+                //Console.WriteLine("ALPHA  Order shifted! Truck: " + (truck) + ", Day: " + day);
             }
         }
 
