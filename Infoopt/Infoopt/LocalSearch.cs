@@ -22,8 +22,9 @@ namespace Infoopt
             chanceAdd = 0.30,
             chanceRemove = 0.10,
             chanceShift = 0.60,
-            alpha = 0.005; // Chance to accept a worse solution
-
+            alpha = 0.99,
+            T = 0.05; //chance parameter
+           
 
         public Random random = new Random();
         
@@ -64,9 +65,18 @@ namespace Infoopt
         // run the model for 'nIterations' cycles
         public void Run(int nIterations) {
             int i = 0;
-            while (i <= nIterations) {
+            int n = 1;
+            while (i <= nIterations)
+            {
                 MutateRandomTruckDayRoutes(i++);
-            }
+            } while (n > 0)
+                {
+                    if (i == n * 10000)
+                    {
+                        T = alpha * T;
+                        n = n + 1;
+                    }
+                }           
         }
 
         // perform one random mutation in a truckschedule route
@@ -151,11 +161,13 @@ namespace Infoopt
 
             // Calculate cost change and see if adding this order here is an improvement.
             float totalCostChange = 0;
+            double p;
             for (int i = 0; i < order.freq; i++)
                 totalCostChange += Schedule.costChangePutBeforeOrder(order, targetRouteList[i].Item1);
-            
+            p = Math.Exp(totalCostChange / T);
+
             // Add the order if cost is negative or with a certain chance
-            if (totalCostChange < 0 || random.NextDouble() < alpha) 
+            if (totalCostChange < 0 || random.NextDouble() < p) 
             {
                 for(int i = 0; i < order.freq; i++)
                     targetRouteList[i].Item2.putOrderBefore(order, targetRouteList[i].Item1, timeChanges[i]);
