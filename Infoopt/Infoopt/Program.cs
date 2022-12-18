@@ -24,7 +24,7 @@ namespace Infoopt {
             
             LS.Run(nIterations: totalIterations);
             printLSCheckerOutput(LS);
-            //printLSDisplay
+            printLSDisplay(LS);
             //Tests.testLSRouteTimes(LS);
             
             
