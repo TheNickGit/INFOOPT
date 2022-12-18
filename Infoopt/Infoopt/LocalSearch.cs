@@ -100,20 +100,19 @@ namespace Infoopt
             // TODO: Simulated Annealing toepassen door de hiervoor benodigde variabelen en functionaliteit toe te voegen
            
             // Make a random choice for add, remove or shift depending on the chances given in the config.
-
             double choice = random.NextDouble();
-            if (choice < chanceAdd)
+            if (choice < chanceAdd) // Chance Add
             {
                 // Take a random order and check if it's available to be added.
                 Order order = randomOrder();
                 if (!order.available)
                     return;
                 TryAddOrder(order);
-            }
-               
-            else if (choice >= chanceAdd && choice < chanceAdd + chanceRemove)
+            }  
+            else if (choice >= chanceAdd && choice < chanceAdd + chanceRemove) // Chance Remove
                 TryRemoveOrder(truck, day, routeOrder);
-            else if (choice >= chanceAdd + chanceRemove && choice < chanceAdd + chanceRemove + chanceShift) {
+            else if (choice >= chanceAdd + chanceRemove && choice < chanceAdd + chanceRemove + chanceShift) // Chance Shift
+            {
                 (Truck truck2, WorkDay day2, DoublyNode<Order> routeOrder2) = PrecomputeMutationValues();
                 bool withinRoute = truck == truck2 && day == day2;
 
@@ -205,35 +204,71 @@ namespace Infoopt
             }
         }
 
-
-
-        // Try to remove an order from the current schedules.
-        public void TryRemoveOrder(Truck truck, WorkDay day, DoublyNode<Order> routeOrder)
+        /// <summary>
+        /// Try to remove an order from the current schedules.
+        /// </summary>
+        public void TryRemoveOrder(Truck truck, WorkDay day, DoublyNode<Order> orderNode)
         {
-            // TODO: Werkt alleen met freq = 1
-            if (routeOrder.value.freq > 1)
+            Order order = orderNode.value;
+            if (order.freq == 0)
                 return;
 
             Route dayRoute = truck.schedule.weekRoutes[(int)day];
 
-            if (dayRoute.orders.Length <= 3)
-                return; // can only remove if three orders present (including start and stop order)
-    
-            float timeChange = Schedule.timeChangeRemoveOrder(routeOrder);
-            if (dayRoute.timeToComplete + timeChange > maxDayTime)
-                return; // Calculate change in time and see if the order can fit in the schedule.
+            List<(DoublyNode<Order>, Route)> targetRouteList = new List<(DoublyNode<Order>, Route)>();
+            //targetRouteList.Add((orderNode, dayRoute));
+            //// If freq > 1, find order in other route schedules.
+            //if (order.freq == 2)
+            //{
+            //    switch (day)
+            //    {
+            //        case WorkDay.Mon:
 
-            // Calculate cost change and see if adding this order here is an improvement.
-            float costChange = Schedule.costChangeRemoveOrder(routeOrder);
-            if (costChange < 0) // If removing the order would result in a negative cost, always choose to remove it.
+            //    }
+            //    // if Mon -> find Thu order
+            //    // if Thu -> find Mon order
+            //    // if Tue -> find Fri order
+            //    // if Fri -> find Tue order
+            //}
+            //if (order.freq == 3)
+            //{
+            //    // if Mon -> find Wed & Fri order
+            //    // if Wed -> find Mon & Fri order
+            //    // if Fri -> find Mon & Wed order
+            //}
+            //if (order.freq == 4)
+            //{
+            //    // find order from all other days
+            //}
+
+            // TODO: Super dirty: dit werkt maar is traag! Bovenstaande is beter
+            if (order.freq == 1)
+                targetRouteList.Add((orderNode, dayRoute));
+            if (order.freq > 1)
+                for (int i = 0; i <= 1; i++)
+                    for (int j = 0; j < 5; j++)
+                        if (trucks[i].schedule.weekRoutes[j].orders.Contains(order))
+                            targetRouteList.Add((trucks[i].schedule.weekRoutes[j].orders.Find(order), trucks[i].schedule.weekRoutes[j]));
+
+            // Calculate change in time and see if the order can fit in the schedule.
+            float[] timeChanges = new float[order.freq];
+            for (int i = 0; i < order.freq; i++)
             {
-                dayRoute.removeOrder(routeOrder, timeChange);
-                //Console.WriteLine("NORMAL Order removed! Truck: " + ((Array.IndexOf(this.trucks, truck))+1) + ", Day: " + day);
+                timeChanges[i] = Schedule.timeChangeRemoveOrder(targetRouteList[i].Item1);
+                if (targetRouteList[i].Item2.timeToComplete + timeChanges[i] > maxDayTime)
+                    return;
             }
-            else if (random.NextDouble() <= alpha)  // TODO: If worse, add node with a chance based on 'a' and 'T'
+
+            // Calculate cost change and see if removing this order is an improvement.
+            float totalCostChange = 0;
+            for (int i = 0; i < order.freq; i++)
+                totalCostChange += Schedule.costChangeRemoveOrder(targetRouteList[i].Item1);
+
+            // Remove order
+            if (totalCostChange < 0 || random.NextDouble() <= alpha) 
             {
-                dayRoute.removeOrder(routeOrder, timeChange);
-                //Console.WriteLine("ALPHA  Order removed! Truck: " + ((Array.IndexOf(this.trucks, truck))+1) + ", Day: " + day);
+                for (int i = 0; i < order.freq; i++)
+                    targetRouteList[i].Item2.removeOrder(targetRouteList[i].Item1, timeChanges[i]);
             }
         }
 

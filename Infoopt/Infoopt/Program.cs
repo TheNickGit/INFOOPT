@@ -6,7 +6,7 @@ namespace Infoopt {
     class Program {
 
         // Config:
-        static int totalIterations = 10_000_000;
+        static int totalIterations = 1_000_000;
 
         public static Order
             startOrder = new Order(0, "MAARHEEZE-start", 0, 0, 0, 0, 287, 56343016, 513026712), // The startlocation of each day.
