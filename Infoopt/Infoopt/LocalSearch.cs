@@ -25,7 +25,7 @@ namespace Infoopt
             alpha = 0.005; // Chance to accept a worse solution
 
 
-        Random random = new Random();
+        public Random random = new Random();
         
         public Order randomOrder() => this.orders[random.Next(orders.Length)];
         public Truck randomTruck() => this.trucks[random.Next(trucks.Length)];
@@ -77,15 +77,29 @@ namespace Infoopt
             // TODO: Simulated Annealing toepassen door de hiervoor benodigde variabelen en functionaliteit toe te voegen
            
             // Make a random choice for add, remove or shift depending on the chances given in the config.
-            //Console.WriteLine(mutation.ToString());
 
             double choice = random.NextDouble();
-            if (choice < chanceAdd) 
-                TryAddOrder();
+            if (choice < chanceAdd)
+            {
+                // Take a random order and check if it's available to be added.
+                Order order = randomOrder();
+                if (!order.available)
+                    return;
+                TryAddOrder(order);
+            }
+               
             else if (choice >= chanceAdd && choice < chanceAdd + chanceRemove)
                 TryRemoveOrder(truck, day, routeOrder);
-            else if (choice >= chanceAdd + chanceRemove && choice < chanceAdd + chanceRemove + chanceShift)
-                TryShiftOrders(truck, day, routeOrder);
+            else if (choice >= chanceAdd + chanceRemove && choice < chanceAdd + chanceRemove + chanceShift) {
+                (Truck truck2, WorkDay day2, DoublyNode<Order> routeOrder2) = PrecomputeMutationValues();
+                bool withinRoute = truck == truck2 && day == day2;
+
+                if (withinRoute) 
+                    TryShiftOrders(truck, day, routeOrder, routeOrder2);
+                else 
+                    TrySwapOrders(truck, day, routeOrder, truck2, day2, routeOrder2);
+            }
+                
         }
 
         // Generate random variables and do the other calculations needed for all iterations (add, remove, shift).
@@ -98,13 +112,8 @@ namespace Infoopt
         /// <summary>
         /// Try to add an order to a route, keeping its frequency in mind.
         /// </summary>
-        public void TryAddOrder()
+        public void TryAddOrder(Order order)
         {
-            // Take a random order and check if it's available to be added.
-            Order order = randomOrder();
-            if (!order.available)
-                return;
-
             // Generate the days the order can be placed on, depending on frequency.
             WorkDay[] days;
             switch (order.freq)
@@ -141,13 +150,9 @@ namespace Infoopt
             }
 
             // Calculate cost change and see if adding this order here is an improvement.
-            float[] costChanges = new float[order.freq];
             float totalCostChange = 0;
             for (int i = 0; i < order.freq; i++)
-            {
-                costChanges[i] = Schedule.costChangePutBeforeOrder(order, targetRouteList[i].Item1);
-                totalCostChange += costChanges[i];
-            }
+                totalCostChange += Schedule.costChangePutBeforeOrder(order, targetRouteList[i].Item1);
             
             // Add the order if cost is negative or with a certain chance
             if (totalCostChange < 0 || random.NextDouble() < alpha) 
@@ -156,6 +161,21 @@ namespace Infoopt
                     targetRouteList[i].Item2.putOrderBefore(order, targetRouteList[i].Item1, timeChanges[i]);
             }
         }
+
+        /// <summary>
+        /// Force add an order into a route - mainly for testing purposes. This method will break the solution when uses for normal iterations!
+        /// </summary>
+        public void ForceAddOrder(Order order, Truck truck, WorkDay day, DoublyNode<Order> node)
+        {
+            float timeChange = Schedule.timeChangePutBeforeOrder(order, node);
+            float costChange = Schedule.costChangePutBeforeOrder(order, node);
+            if (costChange < 0 || random.NextDouble() < alpha)
+            {
+                Route route = truck.schedule.weekRoutes[(int)day];
+                route.putOrderBefore(order, node, timeChange);
+            }
+        }
+
 
 
         // Try to remove an order from the current schedules.
@@ -167,7 +187,7 @@ namespace Infoopt
 
             Route dayRoute = truck.schedule.weekRoutes[(int)day];
 
-            if (dayRoute.orders.Length < 3)
+            if (dayRoute.orders.Length <= 3)
                 return; // can only remove if three orders present (including start and stop order)
     
             float timeChange = Schedule.timeChangeRemoveOrder(routeOrder);
@@ -181,17 +201,17 @@ namespace Infoopt
                 dayRoute.removeOrder(routeOrder, timeChange);
                 //Console.WriteLine("NORMAL Order removed! Truck: " + ((Array.IndexOf(this.trucks, truck))+1) + ", Day: " + day);
             }
-            else if (random.NextDouble() < alpha)  // TODO: If worse, add node with a chance based on 'a' and 'T'
+            else if (random.NextDouble() <= alpha)  // TODO: If worse, add node with a chance based on 'a' and 'T'
             {
                 dayRoute.removeOrder(routeOrder, timeChange);
                 //Console.WriteLine("ALPHA  Order removed! Truck: " + ((Array.IndexOf(this.trucks, truck))+1) + ", Day: " + day);
             }
         }
 
-        // Try to shift two orders in the current schedules.
-        public void TryShiftOrders(Truck truck, WorkDay day, DoublyNode<Order> routeOrder)
+        // Try to swap two orders in the current schedules (shift between different routes).
+        public void TrySwapOrders(Truck truck, WorkDay day, DoublyNode<Order> routeOrder, Truck truck2, WorkDay day2, DoublyNode<Order> routeOrder2)
         {
-            (Truck truck2, WorkDay day2, DoublyNode<Order> routeOrder2) = PrecomputeMutationValues(); 
+            //(Truck truck2, WorkDay day2, DoublyNode<Order> routeOrder2) = PrecomputeMutationValues(); 
             Route dayRoute = truck.schedule.weekRoutes[(int)day],
                 dayRoute2 = truck2.schedule.weekRoutes[(int)day2];
 
@@ -204,35 +224,64 @@ namespace Infoopt
                     || routeOrder.value == routeOrder2.value) 
                 return; // route orders should not be 'start' or 'stort', and no use in swapping with itself
 
-            bool withinRoute = dayRoute == dayRoute2;
-            float timeChange = Schedule.timeChangeSwapOrders(routeOrder, routeOrder2, withinRoute),
-                timeChange2 = Schedule.timeChangeSwapOrders(routeOrder2, routeOrder, withinRoute);
+            float timeChange = Schedule.timeChangeSwapOrders(routeOrder, routeOrder2),
+                timeChange2 = Schedule.timeChangeSwapOrders(routeOrder2, routeOrder);
             
             if (dayRoute.timeToComplete + timeChange > maxDayTime 
                     || dayRoute2.timeToComplete + timeChange2 > maxDayTime)
-                return; // Check if shift fits time-wise
+                return; // Check if swap fits time-wise
 
-            // Calculate cost change and see if shifting these orders is an improvement.
+            // Calculate cost change and see if swapping these orders is an improvement.
             float costChange = Schedule.costChangeSwapOrders(routeOrder, routeOrder2),
                 costChange2 = Schedule.costChangeSwapOrders(routeOrder2, routeOrder);
 
-            if (costChange + costChange2 < 0) {// If the shift would result in a negative cost, perform it always.
-                Route.shiftOrders(
+            if (costChange + costChange2 < 0) {// If the swap would result in a negative cost, perform it always.
+                Route.swapOrders(
                     (dayRoute, routeOrder, timeChange),
                     (dayRoute2, routeOrder2, timeChange2)
                 );
+                //Console.WriteLine("NORMAL Order swapped! Truck: " + (truck + 1) + ", Day: " + day);
+            }
+            else if (random.NextDouble() <= alpha)   // If worse, perform the swap with a chance based on 'a' and 'T'
+            {
+                Route.swapOrders(
+                    (dayRoute2, routeOrder2, timeChange2),
+                    (dayRoute, routeOrder, timeChange)
+                );
+                //Console.WriteLine("ALPHA  Order swapped! Truck: " + (truck + 1) + ", Day: " + day);
+            }
+        }
+
+        // Try to shift orders in their current schedules (swap within the same route!)
+        public void TryShiftOrders(Truck truck, WorkDay day, DoublyNode<Order> routeOrder, DoublyNode<Order> routeOrder2) {
+            Route dayRoute = truck.schedule.weekRoutes[(int)day];
+
+            if (dayRoute.orders.isHeadOrTail(routeOrder) 
+                    || dayRoute.orders.isHeadOrTail(routeOrder2) 
+                    || routeOrder.value == routeOrder2.value) 
+                return; // route orders should not be 'start' or 'stort', and no use in shifting with itself
+
+
+            float timeChange = Schedule.timeChangeShiftOrders(routeOrder, routeOrder2);
+
+            if (dayRoute.timeToComplete + timeChange > maxDayTime)
+                return; // Check if shift fits time-wise
+
+            
+            float costChange = Schedule.costChangeShiftOrders(routeOrder, routeOrder2);
+
+            if (costChange < 0) {// If the shift would result in a negative cost, perform it always.
+                dayRoute.shiftOrders(routeOrder, routeOrder2, dayRoute, timeChange);
                 //Console.WriteLine("NORMAL Order shifted! Truck: " + (truck + 1) + ", Day: " + day);
             }
             else if (random.NextDouble() < alpha)   // If worse, perform the shift with a chance based on 'a' and 'T'
             {
-                Route.shiftOrders(
-                    (dayRoute, routeOrder, timeChange),
-                    (dayRoute2, routeOrder2, timeChange2)
-                );
+                dayRoute.shiftOrders(routeOrder, routeOrder2, dayRoute, timeChange);
                 //Console.WriteLine("ALPHA  Order shifted! Truck: " + (truck + 1) + ", Day: " + day);
             }
         }
 
+        
         // Calculates the total cost of a solution by checking all its content.
         // This method is very slow! Use one of the methods for cost changes instead for small changes.
         public float CalcTotalCost()
