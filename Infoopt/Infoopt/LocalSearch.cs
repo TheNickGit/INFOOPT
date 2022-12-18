@@ -92,14 +92,12 @@ namespace Infoopt
             while (i <= nIterations)
             {
                 MutateRandomTruckDayRoutes(i++);
-            } while (n > 0)
+                if (i == n * 10000)
                 {
-                    if (i == n * 10000)
-                    {
-                        T = alpha * T;
-                        n = n + 1;
-                    }
-                }           
+                    T = alpha * T;
+                    n = n + 1;
+                }
+            }          
         }
 
         // perform one random mutation in a truckschedule route
