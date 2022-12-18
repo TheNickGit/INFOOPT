@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\jjand\\Documents\\GitHub\\infoopt\\infoopt\\infoopt\\Infoopt.csproj": {}
+    "C:\\Users\\jjand\\Documents\\GitHub\\infoopt\\Infoopt\\infoopt\\Infoopt.csproj": {}
   },
   "projects": {
-    "C:\\Users\\jjand\\Documents\\GitHub\\infoopt\\infoopt\\infoopt\\Infoopt.csproj": {
+    "C:\\Users\\jjand\\Documents\\GitHub\\infoopt\\Infoopt\\infoopt\\Infoopt.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\jjand\\Documents\\GitHub\\infoopt\\infoopt\\infoopt\\Infoopt.csproj",
+        "projectUniqueName": "C:\\Users\\jjand\\Documents\\GitHub\\infoopt\\Infoopt\\infoopt\\Infoopt.csproj",
         "projectName": "Infoopt",
-        "projectPath": "C:\\Users\\jjand\\Documents\\GitHub\\infoopt\\infoopt\\infoopt\\Infoopt.csproj",
+        "projectPath": "C:\\Users\\jjand\\Documents\\GitHub\\infoopt\\Infoopt\\infoopt\\Infoopt.csproj",
         "packagesPath": "C:\\Users\\jjand\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\jjand\\Documents\\GitHub\\infoopt\\infoopt\\infoopt\\obj\\",
+        "outputPath": "C:\\Users\\jjand\\Documents\\GitHub\\infoopt\\Infoopt\\infoopt\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\jjand\\AppData\\Roaming\\NuGet\\NuGet.Config",

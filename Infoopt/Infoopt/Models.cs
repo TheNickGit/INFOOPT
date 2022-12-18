@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Infoopt
@@ -9,10 +10,13 @@ namespace Infoopt
     class Truck {
         
         public Schedule schedule;
-        public static float unloadTime = 1800.0f;
 
-        public Truck(Order startOrder, Order stopOrder) {
-            this.schedule = new Schedule(startOrder, stopOrder, Truck.unloadTime);
+        public static float unloadTime = 1800.0f;       // seconds
+        public static int volumeCapacity =  100_000;    // liters (includes compression)
+
+
+        public Truck() {
+            this.schedule = new Schedule();
         }
 
 
@@ -24,32 +28,35 @@ namespace Infoopt
     // meant for calculating time- and cost changes of route mutations
     class Schedule {
 
-        public Route[] weekRoutes = new Route[5];
+        public DayRoute[] weekRoutes = new DayRoute[5];
 
 
         // init each route of the weekschedule by setting its start and stop order, and unloading time
-        public Schedule(Order startOrder, Order stopOrder, float truckUnloadTime) {
+        public Schedule() {
             foreach(int day in Enum.GetValues(typeof(WorkDay))) {
-                this.weekRoutes[day] = new Route(startOrder, stopOrder);
-                this.weekRoutes[day].timeToComplete += truckUnloadTime;
+                this.weekRoutes[day] = new DayRoute();
             }
         }
 
-        // Display all weekroutes (custom print)
-        public string Display() {
-            string msg = "";
-            int day = 0;
-            foreach(Route dayRoute in this.weekRoutes) {
-                msg += $"----- {(WorkDay)(day++)}  ({Math.Round(dayRoute.timeToComplete, 1)} sec. | {Math.Round(dayRoute.timeToComplete / 60, 1)} min.) ------\n{dayRoute.Display()}";
-            }
-            return msg;
-        }
+        // Display the orders of all weekroutes
+        public string Display() 
+            => String.Join("\n", this.weekRoutes.Select((dayRoute, day) => {
+                    float ttcMinutes = (float)Math.Round(dayRoute.timeToComplete / 60.0f, 1);
+                    return $"------ {(WorkDay)(day++)}  ({ttcMinutes} min.) ------\n{dayRoute.Display()}";
+                }));
+
+        // Describe the trips of all weekroutes
+        public string Describe()
+            => String.Join("\n", this.weekRoutes.Select((dayRoute, day) => {
+                    float ttcMinutes = (float)Math.Round(dayRoute.timeToComplete / 60.0f, 1);
+                    return $"------ {(WorkDay)(day++)}  ({ttcMinutes} min.) ------\n{dayRoute.Describe()}";
+                }));
 
 
         // loop through the week routes and accumulate their time to complete
         public float timeCost() {
             float cost = 0.0f;
-            foreach(Route dayRoute in this.weekRoutes) {
+            foreach(DayRoute dayRoute in this.weekRoutes) {
                 cost += dayRoute.timeToComplete;
             }
             return cost;
@@ -205,66 +212,265 @@ namespace Infoopt
 
 
 
-    enum WorkDay {
+    public enum WorkDay {
         Mon, Tue, Wed, Thu, Fri
+    }
+
+    public static class WorkDayHelpers {
+        public static WorkDay randomDay()
+            => (WorkDay)Program.random.Next(Enum.GetValues(typeof(WorkDay)).Length);
+
+        public static (WorkDay, WorkDay) randomDay2()
+        {
+            WorkDay day1 = Program.random.Next(2) == 1 ? WorkDay.Mon : WorkDay.Tue; // Mon or Tue
+            WorkDay day2 = day1 == WorkDay.Mon 
+                ? WorkDay.Thu   // Mon + Thu combo
+                : WorkDay.Fri;  // Tue + Fri combo
+            return (day1, day2);
+        }
+
+    }
+
+    class DayRoute {
+
+        public static float maxDayTime = 43200f;
+
+        public static Order
+            startOrder = new Order(0, "MAARHEEZE-start", 0, 0, 0, 0, 287, 56343016, 513026712), // The startlocation of each day.
+            emptyingOrder = new Order(0, "MAARHEEZE-stort", 0, 0, 0, 30, 287, 56343016, 513026712); // The 'stortplaats'
+
+        public List<RouteTrip> trips;
+
+        public float timeToComplete { get { return this.trips.Select(trip => trip.timeToComplete).Sum(); } }
+        public bool canAddTimeChange(float dt) => this.timeToComplete + dt <= DayRoute.maxDayTime;
+
+
+        // get a random route trip in this dayroute
+        public RouteTrip getRandomRouteTrip() {
+            //sConsole.WriteLine(this.trips.Count.ToString());
+            return this.trips[Program.random.Next(this.trips.Count)];
+        }
+
+        // get a random order node from one of this dayroute's trips (also returned)
+        public (RouteTrip trip, DoublyNode<Order> tripOrder) getRandRouteTripOrderNode() {
+            RouteTrip trip = getRandomRouteTrip();
+            return (trip, trip.getRandOrderNode());
+
+        }
+
+
+        public DayRoute() {
+            this.trips = new List<RouteTrip>();
+            this.AddTrip();     // a dayroute always consist of at least one trip
+        }
+
+
+        // Display all route trip orders
+        public string Display() 
+            => String.Join("\n", this.trips.Select(
+                (trip, i) => $"--- Route trip {++i}  ({trip.volumePickedUp} L) ---\n{trip.Display()}"
+            ));
+
+        // Display all route trips themselves only
+        public string Describe() 
+            => String.Join("\n", this.trips.Select(
+                (trip, i) => $"Route trip {++i}:\t\t {trip.volumePickedUp} L\t {Math.Round(trip.timeToComplete/60.0f,1)} min."
+            ));
+
+
+        
+        // add a route trip at the end of the dayroute
+        public RouteTrip AddTrip() {
+            RouteTrip trip = new RouteTrip(DayRoute.startOrder, DayRoute.emptyingOrder);
+            trip.timeToComplete += Truck.unloadTime; // each trip ends with the truck unloading at the emptying-order
+            this.trips.Add(trip);
+            return trip;
+        }
+
+        // add a route trip at the end of the dayroute with the new order (if it fits the time wise)
+        public void AddTripWithNewOrder(Order order) {
+            RouteTrip newTrip = this.AddTrip();
+            float newTimeChange = newTrip.orders.head.value.distanceTo(order).travelDur + order.emptyDur + order.distanceTo(newTrip.orders.tail.value).travelDur;
+
+            Program.Assert(newTrip.canAddVolumeChange(order.garbageVolume()));  // a new order should always fit volume-wise into a new trip
+            if(!this.canAddTimeChange(newTimeChange))
+                return;
+
+            newTrip.putOrderBefore(order, newTrip.orders.tail, newTimeChange);
+        }
+
+
+        // try whether you can squeeze the order in any of the dayroute trips,
+        // by trying to place it before a random chosen trip order.
+        public bool tryPutOrderInAnyTrip(Order order) {
+            bool orderAdded = false;
+            foreach(RouteTrip altTrip in this.trips) {
+                if (!altTrip.canAddVolumeChange(order.garbageVolume()))
+                    continue;
+                DoublyNode<Order> altTripOrder = altTrip.getRandOrderNode();
+                float altTimeChange = Schedule.timeChangePutBeforeOrder(order, altTripOrder);
+                if (!this.canAddTimeChange(altTimeChange)) continue;
+                altTrip.putOrderBefore(order, altTripOrder, altTimeChange);
+                orderAdded = true;
+                break;
+            }
+            return orderAdded;
+        }
+
+
+        // tries to add an order to the trip before the specified trip order.
+        // if it does not fit, it will try to fit before one random trip order 
+        // of each of the trips contained in this day-route. Only if all those don't fit, 
+        // it is assumed all the trips are full and a new trip will be tried
+        // to be created with the new order put in it (reduces trip amount blowup).
+        public void putOrderBeforeInTrip(Order order, float timeChange, RouteTrip trip, DoublyNode<Order> tripOrder) {
+            int orderVolume = order.garbageVolume();
+
+            // only put it before trip order if it fits truck-capacity wise, else try other trips in this day-route
+            if (trip.canAddVolumeChange(orderVolume))
+                trip.putOrderBefore(order, tripOrder, timeChange);
+
+            else {
+                // alternatively; try add order before random order in each trip in this dayroute.
+                // this makes it possible to add new trips without trip amount being blown up,
+                // by first checking (more like guessing) whether all trips in dayroute are full
+                // and only then adding a new trip (for the new order)
+                if (this.tryPutOrderInAnyTrip(order)) { 
+                    // if cannot be added to any existing trip then try adding a new trip
+                    this.AddTripWithNewOrder(order);
+                }
+            }
+        }
+
+        // remove order from the trip, removing the trip itself 
+        // when no orders in it left (reduces trip amount blowup)
+        public void removeOrderInTrip(float timeChange, RouteTrip trip, DoublyNode<Order> tripOrder) {
+
+            // no checks for pickup volume, because order removal decreases picked up volume
+
+            trip.removeOrder(tripOrder, timeChange);
+
+            // if only start and emptying orders left, also remove trip itself 
+            if (trip.orders.Length == 2) {  
+                
+                // never remove if last trip left, even when it is empty
+                if (this.trips.Count == 1) return;
+
+                this.trips.Remove(trip);
+            };
+
+        }
+
+        // shift two orders in the same trip
+        public void shiftOrdersInTrip(float timeChange, RouteTrip trip, DoublyNode<Order> tripOrder, DoublyNode<Order> tripOrder2) { 
+
+            // no checks for pickup volume, because within trip order shifts have no effect on picked up volume
+
+            trip.shiftOrders(tripOrder, tripOrder2, timeChange);
+        }
+
+
+        // swaps two orders in two different trips if it fits volume wise in those trips
+        public static void swapOrdersInTrips(
+            (float timeChange, RouteTrip routeTrip, DoublyNode<Order> tripOrder) o, 
+            (float timeChange, RouteTrip routeTrip, DoublyNode<Order> tripOrder) o2
+        ) {
+
+            int vol = o.tripOrder.value.garbageVolume(),
+                vol2 = o2.tripOrder.value.garbageVolume();
+
+            int volChange = vol2 - vol,
+                volChange2 = vol - vol2;
+            
+            // Check if swap fits with volume capacity of truck in trips
+            if (!o.routeTrip.canAddVolumeChange(volChange)
+                || !o2.routeTrip.canAddVolumeChange(volChange2))
+                return;
+
+            RouteTrip.swapOrders(o, o2);
+            
+        }
+
+
     }
 
 
 
-    // The route is repsonsible for holding the sequential list of orders,
-    // and keepint track of the total time for the route to complete
-    class Route {
+    // The route trip is repsonsible for holding the sequential list of orders
+    // between the startin and the emptying order, to the extent of a day-route 
+    // being able to hold multiple route trips. it keeps track of the total time 
+    // of the trip to complete, and how much volume of garbage was picked up.
+    class RouteTrip {
 
         public DoublyList<Order> orders;
-        public float timeToComplete = 0.0f;
 
-        public Route(Order startOrder, Order stopOrder) {
+        public float timeToComplete = 0.0f;
+        public int volumePickedUp = 0;
+
+        public bool canAddVolumeChange(float dv) => this.volumePickedUp + dv <= Truck.volumeCapacity;
+
+
+        public DoublyNode<Order> getRandOrderNode() {
+            int i = Program.random.Next(1, this.orders.Length); // dont take the starting order
+            return this.orders.head.skipForward(i);
+        }
+
+
+        public RouteTrip(Order startOrder, Order stopOrder) {
             this.orders = new DoublyList<Order>(
                 new DoublyNode<Order>(startOrder),
                 new DoublyNode<Order>(stopOrder)
             );
         }
 
-        // Display all route orders (custom print)
-        public string Display() {
-            string msg = "";
-            foreach(DoublyNode<Order> order in this.orders) {
-                msg += $"{order.value.Display()}\n";
-            }
-            return msg;
-        }
+        // Display all trip orders
+        public string Display() 
+            => String.Join('\n', this.orders.toEnumerable().Select(order => order.value.Display()));
 
 
-        // puts an order before another order in this route (with time change dt)
-        public void putOrderBefore(Order order, DoublyNode<Order> routeOrder, float dt) {
-            this.orders.insertBeforeNode(order, routeOrder);    // put order before a order already in the route
+
+        // puts an order before another order in this trip, modifying the time and volume change
+        public void putOrderBefore(Order order, DoublyNode<Order> tripOrder, float dt) {
+            this.orders.insertBeforeNode(order, tripOrder);    // put order before a order already in the route
+            this.volumePickedUp += order.garbageVolume();       // modify volume picked up in route
             this.timeToComplete += dt;                          // modify total route time to complete 
-            order.decreaseFrequency();                          // signal that order has been placed into a route; one less pickup to do
+            order.decreaseFrequency();                          
         }
 
-         // removes an order in this route (with time change dt)
-        public void removeOrder(DoublyNode<Order> routeOrder, float dt) {
-            this.orders.ejectAfterNode(routeOrder.prev);        // remove order from route
-            this.timeToComplete += dt;                          // modify total route time to complete
-            routeOrder.value.increaseFrequency();               // signal that order has been removed from a route; one more pickup to do again
+         // removes an order in this trip, modifying the time and volume change
+        public void removeOrder(DoublyNode<Order> tripOrder, float dt) {
+            this.orders.ejectAfterNode(tripOrder.prev);                // remove order from route
+            this.volumePickedUp -= tripOrder.value.garbageVolume();    // modify volume picked up in route
+            this.timeToComplete += dt;                                  // modify total route time to complete
+            tripOrder.value.increaseFrequency();                                       
         }
 
-        // swaps two orders not within same route; otherwise shiftOrders
+        // swaps two orders not within same trip, modifying the time and volume change
         public static void swapOrders(
-                (Route route, DoublyNode<Order> routeOrder, float dt) o,
-                (Route route, DoublyNode<Order> routeOrder, float dt) o2
+                (float dt, RouteTrip trip, DoublyNode<Order> tripOrder) o,
+                (float dt, RouteTrip trip, DoublyNode<Order> tripOrder) o2
             ) 
         {
-            DoublyList<Order>.swapNodes(o.routeOrder, o2.routeOrder);   // swap values of nodes (orders)
-            o.route.timeToComplete += o.dt;                             // modify total route time to complete
-            o2.route.timeToComplete += o2.dt;                           // modify total route2 time to complete
+            DoublyList<Order>.swapNodes(o.tripOrder, o2.tripOrder);   // swap values of nodes (orders)
+            o.trip.timeToComplete += o.dt;                             // modify total route time to complete
+            o2.trip.timeToComplete += o2.dt;                           // modify total route2 time to complete
+
+            // modify volume picked up in routes
+            int vol = o.tripOrder.value.garbageVolume(),
+                vol2 = o2.tripOrder.value.garbageVolume();
+
+            // NOTE: in my head, these 'vol' and 'vol1' volumes need to be changed for both trips
+            // however, after debugging seemed to work correctly this way (??)
+            o.trip.volumePickedUp += (-vol2 + vol);
+            o2.trip.volumePickedUp += (-vol + vol2);
+            
         }
 
-        // shifts two orders within same route
-        public void shiftOrders(DoublyNode<Order> routeOrder, DoublyNode<Order> routeOrder2, Route route, float dt) 
+        // shifts two orders within same trip, modifying the time change (no effect on volume picked up)
+        public void shiftOrders(DoublyNode<Order> tripOrder, DoublyNode<Order> tripOrder2, float dt) 
         {
-            DoublyList<Order>.swapNodes(routeOrder, routeOrder2);    // swap values of nodes (orders)
-            route.timeToComplete += dt;                             // modify total route time to complete
+            DoublyList<Order>.swapNodes(tripOrder, tripOrder2);     // swap values of nodes (orders)
+            this.timeToComplete += dt;                              // modify total route time to complete
         }
     }
 
@@ -279,8 +485,8 @@ namespace Infoopt
             freq,                       // weekly frequency of order
             binAmt,                     // amount of bins
             binVol,                     // volume of bins
-            distId,                     // id of distance of order in distance-matrix (NOTE, DIFFERENT ORDERS MIGHT HAVE SAME DISTANCE ID ENTRY)
-            spot;                       // TODO: Deze is er alleen even als tussentijdse oplossing om orders te koppelen aan hun plek in de orders array
+            distId;                     // id of distance of order in distance-matrix (NOTE, DIFFERENT ORDERS MIGHT HAVE SAME DISTANCE ID ENTRY)
+            //spot;                       // TODO: Deze is er alleen even als tussentijdse oplossing om orders te koppelen aan hun plek in de orders array
         public float emptyDur;          // time it takes to empty the bins of this order
         public (int X, int Y) coord;    // coordinates of order
         public bool available;          // signals whether the order is currently available to be taken
@@ -295,6 +501,9 @@ namespace Infoopt
             return this.distancesToOthers[other.distId];
         }
             
+
+        public int garbageVolume()
+            => this.binAmt * this.binVol; 
 
 
         public Order(

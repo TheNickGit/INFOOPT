@@ -23,6 +23,13 @@ namespace Infoopt {
         public bool isHeadOrTail(DoublyNode<T> node) => this.isHead(node) || this.isTail(node);
 
 
+        public IEnumerable<DoublyNode<T>> toEnumerable() {
+            foreach (DoublyNode<T> node in this) {
+                yield return node;
+            }
+
+        }
+
         // CONSTRUCTOR METHODS
         public static DoublyList<T> fromArray(T[] values)
         {
