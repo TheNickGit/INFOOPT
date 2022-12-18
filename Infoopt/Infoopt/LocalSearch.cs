@@ -19,9 +19,9 @@ namespace Infoopt
 
         // Config:
         public static double
-            chanceAdd = 0.20,
+            chanceAdd = 0.30,
             chanceRemove = 0.10,
-            chanceShift = 0.70,
+            chanceShift = 0.60,
             alpha = 0.005; // Chance to accept a worse solution
 
 
@@ -34,16 +34,16 @@ namespace Infoopt
             return days[random.Next(days.Length)];
         }
 
-        public (WorkDay, WorkDay)  randomDay2()
+        public WorkDay[] randomDay2()
         {
-            WorkDay[] days = (WorkDay[])Enum.GetValues(typeof(WorkDay));
-            WorkDay day1 = days[random.Next(2)]; // Mon or Tue
-            WorkDay day2;
-            if (day1 == WorkDay.Mon)
-                day2 = WorkDay.Thu; // Mon + Thu combo
+            WorkDay[] allDays = (WorkDay[])Enum.GetValues(typeof(WorkDay));
+            WorkDay[] days = new WorkDay[2];
+            days[0] = allDays[random.Next(2)]; // Mon or Tue
+            if (days[0] == WorkDay.Mon)
+                days[1] = WorkDay.Thu;  // Mon + Thu combo
             else
-                day2 = WorkDay.Fri; // Tue + Fri combo
-            return (day1, day2);
+                days[1] = WorkDay.Fri; // Tue + Fri combo
+            return days;
         }
         public Route randomTruckDayRoute(Truck truck) => truck.schedule.weekRoutes[(int)randomDay()];
         public DoublyNode<Order> randomTruckDayRouteOrder(Truck truck, WorkDay day) {
@@ -81,7 +81,7 @@ namespace Infoopt
 
             double choice = random.NextDouble();
             if (choice < chanceAdd) 
-                TryAddOrder(truck, day, routeOrder);
+                TryAddOrder();
             else if (choice >= chanceAdd && choice < chanceAdd + chanceRemove)
                 TryRemoveOrder(truck, day, routeOrder);
             else if (choice >= chanceAdd + chanceRemove && choice < chanceAdd + chanceRemove + chanceShift)
@@ -95,74 +95,65 @@ namespace Infoopt
             return (truck, day, randomTruckDayRouteOrder(truck, day));
         }
 
-        // Try to add an order into the current dayRoute before a certain routeOrder
-        public void TryAddOrder(Truck truck, WorkDay day, DoublyNode<Order> routeOrder) {
-            
-            Order order = randomOrder(); // order to try add
+        /// <summary>
+        /// Try to add an order to a route, keeping its frequency in mind.
+        /// </summary>
+        public void TryAddOrder()
+        {
+            // Take a random order and check if it's available to be added.
+            Order order = randomOrder();
             if (!order.available)
                 return;
-            if (order.freq == 1)
-                TryAddOrder1(order);
-            else if (order.freq == 2)
-                TryAddOrder2(order);
-        }
 
-        /// <summary>
-        /// Try to add an order of frequency 1 to a route.
-        /// </summary>
-        public void TryAddOrder1(Order order)
-        {
-            Truck truck = randomTruck();
-            WorkDay day = randomDay();
-            Route dayRoute = truck.schedule.weekRoutes[(int)day];
-            DoublyNode<Order> target = randomTruckDayRouteOrder(truck, day);  
-            
-            // Calculate change in time and see if the order can fit in the schedule.
-            float timeChange = Schedule.timeChangePutBeforeOrder(order, target);
-            if (dayRoute.timeToComplete + timeChange > maxDayTime)
-                return;
-
-            // Calculate cost change and see if adding this order here is an improvement.
-            float costChange = Schedule.costChangePutBeforeOrder(order, target);
-            if (costChange < 0) // If adding the order would result in a negative cost, add it always.
-                dayRoute.putOrderBefore(order, target, timeChange);
-            else if (random.NextDouble() < alpha)   // If worse, add node with a chance based on the simulated annealing variables.
-                dayRoute.putOrderBefore(order, target, timeChange);
-        }
-
-        /// <summary>
-        /// Try to add an order of frequency 2 to a route.
-        /// </summary>
-        public void TryAddOrder2(Order order)
-        {
-            Truck truck1 = randomTruck();
-            Truck truck2 = randomTruck();
-            (WorkDay, WorkDay) days = randomDay2();
-            WorkDay day1 = days.Item1;
-            WorkDay day2 = days.Item2;
-            Route dayRoute1 = truck1.schedule.weekRoutes[(int)day1];
-            DoublyNode<Order> target1 = randomTruckDayRouteOrder(truck1, day1);
-            Route dayRoute2 = truck2.schedule.weekRoutes[(int)day2];
-            DoublyNode<Order> target2 = randomTruckDayRouteOrder(truck2, day2);
-
-            // Calculate change in time and see if the order can fit in the schedule.
-            float timeChange1 = Schedule.timeChangePutBeforeOrder(order, target1);
-            float timeChange2 = Schedule.timeChangePutBeforeOrder(order, target2);
-            if (dayRoute1.timeToComplete + timeChange1 > maxDayTime || dayRoute2.timeToComplete + timeChange2 > maxDayTime)
-                return;
-
-            // Calculate cost change and see if adding this order here is an improvement.
-            float costChange1 = Schedule.costChangePutBeforeOrder(order, target1);
-            float costChange2 = Schedule.costChangePutBeforeOrder(order, target2);
-            if (costChange1 < 0 && costChange2 < 0) // If adding the order would result in a negative cost, add it always.
+            // Generate the days the order can be placed on, depending on frequency.
+            WorkDay[] days;
+            switch (order.freq)
             {
-                dayRoute1.putOrderBefore(order, target1, timeChange1);
-                dayRoute2.putOrderBefore(order, target2, timeChange2);
+                case 1:
+                    days = new WorkDay[1];
+                    days[0] = randomDay();
+                    break;
+                case 2:
+                    days = randomDay2();
+                    break;
+                default:
+                    return;
             }
-            else if (random.NextDouble() < alpha)   // If worse, add node with a chance based on the simulated annealing variables.
+
+            // Generate random spots on these days to potentially add the order to.
+            (DoublyNode<Order>, Route)[] targetRouteList = new (DoublyNode<Order>, Route)[order.freq];
+            for (int i = 0; i < order.freq; i++)
             {
-                dayRoute1.putOrderBefore(order, target1, timeChange1);
-                dayRoute2.putOrderBefore(order, target2, timeChange2);
+                Truck truck = randomTruck();
+                WorkDay day = days[i];
+                Route dayRoute = truck.schedule.weekRoutes[(int)day];
+                DoublyNode<Order> target = randomTruckDayRouteOrder(truck, day);
+                targetRouteList[i] = (target, dayRoute);
+            }
+
+            // Calculate change in time and see if the order can fit in the schedule.
+            float[] timeChanges = new float[order.freq];
+            for (int i = 0; i < order.freq; i++)
+            {
+                timeChanges[i] = Schedule.timeChangePutBeforeOrder(order, targetRouteList[i].Item1);
+                if (targetRouteList[i].Item2.timeToComplete + timeChanges[i] > maxDayTime)
+                    return;
+            }
+
+            // Calculate cost change and see if adding this order here is an improvement.
+            float[] costChanges = new float[order.freq];
+            float totalCostChange = 0;
+            for (int i = 0; i < order.freq; i++)
+            {
+                costChanges[i] = Schedule.costChangePutBeforeOrder(order, targetRouteList[i].Item1);
+                totalCostChange += costChanges[i];
+            }
+            
+            // Add the order if cost is negative or with a certain chance
+            if (totalCostChange < 0 || random.NextDouble() < alpha) 
+            {
+                for(int i = 0; i < order.freq; i++)
+                    targetRouteList[i].Item2.putOrderBefore(order, targetRouteList[i].Item1, timeChanges[i]);
             }
         }
 

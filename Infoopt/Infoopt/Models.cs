@@ -9,7 +9,7 @@ namespace Infoopt
     class Truck {
         
         public Schedule schedule;
-        public static float unloadTime = 30.0f;
+        public static float unloadTime = 1800f;
 
         public Truck(Order startOrder, Order stopOrder) {
             this.schedule = new Schedule(startOrder, stopOrder, Truck.unloadTime);
