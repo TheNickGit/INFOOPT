@@ -54,11 +54,10 @@ namespace Infoopt
             // Time decreases
             float currentDistanceGain = prev.distanceTo(current).travelDur  ;
 
-
-
             // Time increases
             float newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(current).travelDur)  ;
             float pickupTimeCost = newOrder.emptyDur;
+
 
             // Calculate change: This number means how much additional time is spend if the order is added
             return (newDistanceCost + pickupTimeCost) - currentDistanceGain;
@@ -116,11 +115,11 @@ namespace Infoopt
             float pickupCost = current.emptyDur * 3;
 
             // Calculate change: costs - gains (so a negative result is good!)
-            return newDistanceCost + pickupCost - (currentDistanceGain + pickupTimeGain);
+            return (newDistanceCost + pickupCost) - (currentDistanceGain + pickupTimeGain);
         }
 
-        // Calculate the time change when shifting orders.
-        public static float timeChangeSwapOrders(DoublyNode<Order> oldRouteOrder, DoublyNode<Order> newRouteOrder, bool withinRoute)
+        // Calculate the time change when swapping orders.
+        public static float timeChangeSwapOrders(DoublyNode<Order> oldRouteOrder, DoublyNode<Order> newRouteOrder)
         {
             Order prev = oldRouteOrder.prev.value,
                 oldOrder = oldRouteOrder.value,
@@ -133,18 +132,36 @@ namespace Infoopt
 
             // Time increases
             float pickupTimeCost = newOrder.emptyDur;
-            float newDistanceCost;
-            if (newOrder == next)
-                newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(oldOrder).travelDur)  ;
-            else if (newOrder == prev)
-                newDistanceCost = (oldOrder.distanceTo(newOrder).travelDur + newOrder.distanceTo(next).travelDur)  ;
-            else
-                newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(next).travelDur)  ;
+            float newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(next).travelDur)  ;
 
-            if (withinRoute) // no change in pickup time when swapping orders within the same route
-                return newDistanceCost - oldDistanceGain; 
-            else 
-                return (pickupTimeCost + newDistanceCost) - (pickupTimeGain + oldDistanceGain);
+
+            return (pickupTimeCost + newDistanceCost) - (pickupTimeGain + oldDistanceGain);
+        }
+
+        public static float timeChangeShiftOrders(DoublyNode<Order> routeOrder, DoublyNode<Order> routeOrder2) {
+            Order order = routeOrder.value,
+                order2 = routeOrder2.value;
+
+            bool secondFollowsFirst = routeOrder.next.value == order2;
+            bool firstFollowsSecond = routeOrder.prev.value == order2;
+            bool areFollowUps = secondFollowsFirst || firstFollowsSecond;
+
+            if (!areFollowUps) // if not following each other up in same route, time change of shift is equal to time change of swap for both
+                return Schedule.timeChangeSwapOrders(routeOrder, routeOrder2) + Schedule.timeChangeSwapOrders(routeOrder2, routeOrder);
+
+            // in same route order shift, order empty durations are disregarded due to having no effect in time change
+            float oldTime, newTime; 
+            if (secondFollowsFirst) { 
+                oldTime = routeOrder.prev.value.distanceTo(order).travelDur + order.distanceTo(order2).travelDur + order2.distanceTo(routeOrder2.next.value).travelDur;
+                newTime = routeOrder.prev.value.distanceTo(order2).travelDur + order2.distanceTo(order).travelDur + order.distanceTo(routeOrder2.next.value).travelDur;
+                return (newTime - oldTime); 
+            }
+            else {
+                oldTime = routeOrder2.prev.value.distanceTo(order2).travelDur + order2.distanceTo(order).travelDur + order.distanceTo(routeOrder.next.value).travelDur;
+                newTime = routeOrder2.prev.value.distanceTo(order).travelDur + order.distanceTo(order2).travelDur + order2.distanceTo(routeOrder.next.value).travelDur;
+                return (newTime - oldTime); 
+            }
+            
         }
 
         public static float costChangeSwapOrders(DoublyNode<Order> oldRouteOrder, DoublyNode<Order> newRouteOrder)
@@ -156,19 +173,22 @@ namespace Infoopt
             
             // Gains
             float oldDistanceGain = (prev.distanceTo(oldOrder).travelDur + oldOrder.distanceTo(next).travelDur)  ;
+            float pickuptTimeGain = oldOrder.emptyDur;
 
             // Costs
-            float newDistanceCost;
-            if (newOrder == next)
-                newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(oldOrder).travelDur)  ;
-            else if (newOrder == prev)
-                newDistanceCost = (oldOrder.distanceTo(newOrder).travelDur + newOrder.distanceTo(next).travelDur)  ;
-            else
-                newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(next).travelDur)  ;
+            float newDistanceCost = (prev.distanceTo(newOrder).travelDur + newOrder.distanceTo(next).travelDur)  ;
+            float pickupTimeCost = newOrder.emptyDur;
 
             // Calculate change: costs - gains (so a negative result is good!)
-            return newDistanceCost - oldDistanceGain;
+            return (newDistanceCost + pickupTimeCost) - (oldDistanceGain + pickuptTimeGain);
         }
+
+        // cost change of shifting orders equals time change, because emptying-duration is indifferent in same route order shift 
+        public static float costChangeShiftOrders(DoublyNode<Order> routeOrder, DoublyNode<Order> routeOrder2) 
+        {
+            return timeChangeShiftOrders(routeOrder, routeOrder2);
+        }
+
 
     }
 

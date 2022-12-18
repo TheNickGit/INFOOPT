@@ -9,7 +9,7 @@ namespace Infoopt
     class Truck {
         
         public Schedule schedule;
-        public static float unloadTime = 30.0f;
+        public static float unloadTime = 1800.0f;
 
         public Truck(Order startOrder, Order stopOrder) {
             this.schedule = new Schedule(startOrder, stopOrder, Truck.unloadTime);
@@ -62,8 +62,8 @@ namespace Infoopt
             routeOrder.value.increaseFrequency();               // signal that order has been removed from a route; one more pickup to do again
         }
 
-        // swaps two orders, can be within route or between routes (with time change dt for each route)
-        public static void shiftOrders(
+        // swaps two orders not within same route; otherwise shiftOrders
+        public static void swapOrders(
                 (Route route, DoublyNode<Order> routeOrder, float dt) o,
                 (Route route, DoublyNode<Order> routeOrder, float dt) o2
             ) 
@@ -73,6 +73,12 @@ namespace Infoopt
             o2.route.timeToComplete += o2.dt;                           // modify total route2 time to complete
         }
 
+        // shifts two orders within same route
+        public void shiftOrders(DoublyNode<Order> routeOrder, DoublyNode<Order> routeOrder2, Route route, float dt) 
+        {
+            DoublyList<Order>.swapNodes(routeOrder, routeOrder2);    // swap values of nodes (orders)
+            route.timeToComplete += dt;                             // modify total route time to complete
+        }
     }
 
 
