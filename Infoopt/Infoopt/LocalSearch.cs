@@ -33,7 +33,6 @@ namespace Infoopt
             WorkDay[] days = (WorkDay[]) Enum.GetValues(typeof(WorkDay));
             return days[random.Next(days.Length)];
         }
-
         public WorkDay[] randomDay2()
         {
             WorkDay[] allDays = (WorkDay[])Enum.GetValues(typeof(WorkDay));
@@ -45,6 +44,30 @@ namespace Infoopt
                 days[1] = WorkDay.Fri; // Tue + Fri combo
             return days;
         }
+        public WorkDay[] randomDay3()
+        {
+            WorkDay[] days = new WorkDay[3];
+            days[0] = WorkDay.Mon;
+            days[1] = WorkDay.Wed;
+            days[2] = WorkDay.Fri;
+            return days;
+        }
+        public WorkDay[] randomDay4()
+        {
+            WorkDay[] allDays = (WorkDay[])Enum.GetValues(typeof(WorkDay));
+            WorkDay[] days = new WorkDay[4];
+            WorkDay excludedDay = allDays[random.Next(5)];
+            int j = 0;
+            for(int i = 0; i < 4; i++)
+            {
+                if (allDays[j] == excludedDay)
+                    j++;
+                days[i] = allDays[j];
+                j++;
+            }
+            return days;
+        }
+
         public Route randomTruckDayRoute(Truck truck) => truck.schedule.weekRoutes[(int)randomDay()];
         public DoublyNode<Order> randomTruckDayRouteOrder(Truck truck, WorkDay day) {
             Route route = truck.schedule.weekRoutes[(int)day];
@@ -124,6 +147,12 @@ namespace Infoopt
                     break;
                 case 2:
                     days = randomDay2();
+                    break;
+                case 3:
+                    days = randomDay3();
+                    break;
+                case 4:
+                    days = randomDay4();
                     break;
                 default:
                     return;
