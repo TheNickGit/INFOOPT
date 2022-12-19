@@ -7,7 +7,7 @@ namespace Infoopt {
     class Program {
 
         // Config:
-        static int totalIterations = 10_000_000;
+        static int totalIterations = 5_000_000;
 
         public static Random random = new Random();
 
@@ -167,8 +167,8 @@ namespace Infoopt {
             while(!(randOrder.freq > 0)) randOrder = LS.randomOrder();
             while(!(randOrder2.freq > 0)) randOrder2 = LS.randomOrder();
 
-            LS.TryAddOrder(randOrder, route, trip, trip.orders.tail);
-            LS.TryAddOrder(randOrder2, route, trip, trip.orders.tail);
+            LS.ForceAddOrder(randOrder, route, trip, trip.orders.tail);
+            LS.ForceAddOrder(randOrder2, route, trip, trip.orders.tail);
             
             float durToOrder1 = trip.orders.head.value.distanceTo(randOrder).travelDur,
                   durFromOrder1To2 = randOrder.distanceTo(randOrder2).travelDur,
@@ -199,10 +199,9 @@ namespace Infoopt {
             while(!(randOrder.freq > 0)) randOrder = LS.randomOrder();
             while(!(randOrder2.freq > 0)) randOrder2 = LS.randomOrder();
 
+            LS.ForceAddOrder(randOrder, route, trip, trip.orders.tail);
+            LS.ForceAddOrder(randOrder2, route, trip, trip.orders.tail);
 
-            LS.TryAddOrder(randOrder, route, trip, trip.orders.tail);
-            LS.TryAddOrder(randOrder2, route, trip, trip.orders.tail);
-            
             float rt;
             bool removeSecond = Program.random.NextDouble() <= 0.5;
             if (removeSecond) {
@@ -242,8 +241,8 @@ namespace Infoopt {
             while(!(randOrder.freq > 0)) randOrder = LS.randomOrder();
             while(!(randOrder2.freq > 0)) randOrder2 = LS.randomOrder();
             
-            LS.TryAddOrder(randOrder, route, trip, trip.orders.tail);
-            LS.TryAddOrder(randOrder2, route, trip, trip.orders.tail);
+            LS.ForceAddOrder(randOrder, route, trip, trip.orders.tail);
+            LS.ForceAddOrder(randOrder2, route, trip, trip.orders.tail);
 
 
             LS.TryShiftOrders(route, trip, trip.orders.head.next, trip.orders.tail.prev);
@@ -282,8 +281,8 @@ namespace Infoopt {
             while(!(randOrder.freq > 0)) randOrder = LS.randomOrder();
             while(!(randOrder2.freq > 0)) randOrder2 = LS.randomOrder();
             
-            LS.TryAddOrder(randOrder, route, trip, trip.orders.tail);
-            LS.TryAddOrder(randOrder2, route2, trip2, trip2.orders.tail);
+            LS.ForceAddOrder(randOrder, route, trip, trip.orders.tail);
+            LS.ForceAddOrder(randOrder2, route2, trip2, trip2.orders.tail);
 
             LS.TrySwapOrders((route, trip, trip.orders.head.next), (route2, trip2, trip2.orders.tail.prev));
 

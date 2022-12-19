@@ -203,6 +203,25 @@ namespace Infoopt {
                 return true;
             else return false;
         }
+
+        // Find a specific target and return the node it's in.
+        public DoublyNode<T> Find(T target)
+        {
+            DoublyNode<T> current = this.head;
+            if (this.head == null)
+                return null;
+
+            while (current.next != null)
+            {
+                if (current.value.Equals(target))
+                    return current;
+                else
+                    current = current.next;
+            }
+            if (current.value.Equals(target))
+                return current;
+            else return null;
+        }
     }
 
 

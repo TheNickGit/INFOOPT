@@ -10,7 +10,7 @@ namespace Infoopt
     class Truck {
         
         public Schedule schedule;
-
+  
         public static float unloadTime = 1800.0f;       // seconds
         public static int volumeCapacity =  100_000;    // liters (includes compression)
 
@@ -220,15 +220,25 @@ namespace Infoopt
         public static WorkDay randomDay()
             => (WorkDay)Program.random.Next(Enum.GetValues(typeof(WorkDay)).Length);
 
-        public static (WorkDay, WorkDay) randomDay2()
+        public static WorkDay[] randomDay2()
         {
             WorkDay day1 = Program.random.Next(2) == 1 ? WorkDay.Mon : WorkDay.Tue; // Mon or Tue
             WorkDay day2 = day1 == WorkDay.Mon 
                 ? WorkDay.Thu   // Mon + Thu combo
                 : WorkDay.Fri;  // Tue + Fri combo
-            return (day1, day2);
+            return new WorkDay[2] { day1, day2 };
         }
-
+        public static WorkDay[] randomDay3()
+            => new WorkDay[3] { WorkDay.Mon, WorkDay.Wed, WorkDay.Fri};
+        public static WorkDay[] randomDay4()
+        {
+            int[] allDays = (int[])Enum.GetValues(typeof(WorkDay));
+            int excludeDay = Program.random.Next(5);
+            return allDays
+                .Where((day, i) => i!=excludeDay)
+                .Select(day =>(WorkDay)day)
+                .ToArray();
+        }
     }
 
     class DayRoute {
