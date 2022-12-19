@@ -23,11 +23,11 @@ namespace Infoopt {
             LocalSearch LS = new LocalSearch(orders);
             
             LS.Run(nIterations: totalIterations);
-            //printLSCheckerOutput(LS);
-            //printTruckScheduleDisplays(LS);
+            printLSCheckerOutput(LS);
+            printTruckScheduleDisplays(LS);
             //printTruckScheduleDescriptions(LS);
-            Tests.testLSrouteTripTimes(LS);
-            Tests.testLSrouteTripVolumes(LS);
+            //Tests.testLSrouteTripTimes(LS);
+            //Tests.testLSrouteTripVolumes(LS);
             
             
             //Tests.TestTimeToCompleteAccumulation(new LocalSearch(orders));

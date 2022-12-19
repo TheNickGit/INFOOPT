@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Text;
 
 /// TODOs:
@@ -118,8 +119,8 @@ namespace Infoopt
         public void TryRemoveOrder(DayRoute dayRoute, RouteTrip routeTrip, DoublyNode<Order> tripOrder) {
             if (tripOrder.value.freq == 1)
                 TryRemoveOrderSingleFreq(dayRoute, routeTrip, tripOrder);
-            else 
-                TryRemoveOrderMultipleFreq(dayRoute, routeTrip, tripOrder);
+            //else 
+            //    TryRemoveOrderMultipleFreq(dayRoute, routeTrip, tripOrder);
         }
 
 
@@ -147,15 +148,15 @@ namespace Infoopt
             // Generate the days the order can be placed on, depending on frequency.
             WorkDay[] days;
             if (order.freq == 2) days = WorkDayHelpers.randomDay2();
-            if (order.freq == 3) days = WorkDayHelpers.randomDay3();
-            if (order.freq == 4) days = WorkDayHelpers.randomDay4();
+            else if (order.freq == 3) days = WorkDayHelpers.randomDay3();
+            else days = WorkDayHelpers.randomDay4();
 
 
             // Generate random spots on these days to potentially add the order to.
             (DoublyNode<Order>, DayRoute, RouteTrip)[] targetList = new (DoublyNode<Order>, DayRoute, RouteTrip)[order.freq];
             for (int i = 0; i < order.freq; i++)
             {
-                ((Truck, WorkDay), DayRoute, RouteTrip, DoublyNode<Order>) mut = PrecomputeMutationValues();
+                ((Truck, WorkDay), DayRoute, RouteTrip, DoublyNode<Order>) mut = PrecomputeMutationValues(days[i]);
                 targetList[i] = (mut.Item4, mut.Item2, mut.Item3);
             }
 
@@ -173,10 +174,10 @@ namespace Infoopt
             double p;
             for (int i = 0; i < order.freq; i++)
                 totalCostChange += Schedule.costChangePutBeforeOrder(order, targetList[i].Item1);
-            p = Math.Exp(totalCostChange / T);
+            p = Math.Exp(totalCostChange / T); // NOOT: Dit wordt bij iedere positieve waarde van totalCostChange een extreem groot positief getal
 
             // Add the order if cost is negative or with a certain chance
-            if (totalCostChange < 0 || Program.random.NextDouble() < T)     // NOTE: HOORT HIER GEEN 'p' TE STAAN IPV 'T' ?
+            if (totalCostChange < 0 || Program.random.NextDouble() < T)     // NOTE: HOORT HIER GEEN 'p' TE STAAN IPV 'T' ? <- mogelijk, maar dan moet p wel op een andere manier berekend worden
             {
                 for(int i = 0; i < order.freq; i++) {
                     // TODO: 'putORderBeforeInTrip' voert nog een volume-capacity check uit en kan daardoor rejecten om order toe te voegen
@@ -256,8 +257,11 @@ namespace Infoopt
             foreach(Truck truck in trucks) {
                 foreach(DayRoute route in truck.schedule.weekRoutes) {
                     foreach(RouteTrip trip in route.trips) {
-                        DoublyNode<Order> otherTripOrder = trip.orders.Find(tripOrder.value);
-                        targetList.Add((otherTripOrder, route, trip));
+                        if (trip.orders.Contains(tripOrder.value))
+                        {
+                            DoublyNode<Order> otherTripOrder = trip.orders.Find(tripOrder.value);
+                            targetList.Add((otherTripOrder, route, trip));
+                        } 
                     }
                 }
             }

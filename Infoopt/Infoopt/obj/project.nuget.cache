@@ -1,20 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "TeeYE9t2hh6nipNTzG+CQXWvDmFdXCQCJR0mUnpYUVmcP+4kIfSgFhwfK4IPTHydSMRFeik2nTw6ptrEM5DIDg==",
+  "dgSpecHash": "pq9oGYtmMWf+7x4PFT1S1X5JhVAUIzpaLjK8NsL5+NmKqLGudRTuQRQEr8AY4nyOhE5SI3gkQD4kym8WThU7ZQ==",
   "success": true,
-  "projectFilePath": "C:\\Users\\jjand\\Documents\\GitHub\\infoopt\\Infoopt\\infoopt\\Infoopt.csproj",
+  "projectFilePath": "C:\\Users\\nvrie\\OneDrive\\Documenten\\Git Repositories\\infoopt\\Infoopt\\Infoopt\\Infoopt.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\jjand\\.nuget\\packages\\microsoft.netcore.app.ref\\3.1.0\\microsoft.netcore.app.ref.3.1.0.nupkg.sha512",
-    "C:\\Users\\jjand\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\3.1.0\\microsoft.windowsdesktop.app.ref.3.1.0.nupkg.sha512",
-    "C:\\Users\\jjand\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\3.1.10\\microsoft.aspnetcore.app.ref.3.1.10.nupkg.sha512",
-    "C:\\Users\\jjand\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\3.1.31\\microsoft.netcore.app.host.win-x64.3.1.31.nupkg.sha512"
+    "C:\\Users\\nvrie\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\3.1.31\\microsoft.netcore.app.host.win-x64.3.1.31.nupkg.sha512"
   ],
-  "logs": [
-    {
-      "code": "Undefined",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "Problem reading the cache file C:\\Users\\jjand\\Documents\\GitHub\\infoopt\\Infoopt\\infoopt\\obj\\project.nuget.cache : Invalid property identifier character: <. Path 'version', line 3, position 0."
-    }
-  ]
+  "logs": []
 }
