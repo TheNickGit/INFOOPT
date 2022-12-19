@@ -1,7 +1,6 @@
 {
   "format": 1,
   "restore": {
-<<<<<<< HEAD
     "C:\\Users\\jjand\\Documents\\GitHub\\infoopt\\Infoopt\\infoopt\\Infoopt.csproj": {}
   },
   "projects": {
@@ -13,26 +12,9 @@
         "projectPath": "C:\\Users\\jjand\\Documents\\GitHub\\infoopt\\Infoopt\\infoopt\\Infoopt.csproj",
         "packagesPath": "C:\\Users\\jjand\\.nuget\\packages\\",
         "outputPath": "C:\\Users\\jjand\\Documents\\GitHub\\infoopt\\Infoopt\\infoopt\\obj\\",
-=======
-    "C:\\Users\\nvrie\\OneDrive\\Documenten\\Git Repositories\\infoopt\\Infoopt\\Infoopt\\Infoopt.csproj": {}
-  },
-  "projects": {
-    "C:\\Users\\nvrie\\OneDrive\\Documenten\\Git Repositories\\infoopt\\Infoopt\\Infoopt\\Infoopt.csproj": {
-      "version": "1.0.0",
-      "restore": {
-        "projectUniqueName": "C:\\Users\\nvrie\\OneDrive\\Documenten\\Git Repositories\\infoopt\\Infoopt\\Infoopt\\Infoopt.csproj",
-        "projectName": "Infoopt",
-        "projectPath": "C:\\Users\\nvrie\\OneDrive\\Documenten\\Git Repositories\\infoopt\\Infoopt\\Infoopt\\Infoopt.csproj",
-        "packagesPath": "C:\\Users\\nvrie\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\nvrie\\OneDrive\\Documenten\\Git Repositories\\infoopt\\Infoopt\\Infoopt\\obj\\",
->>>>>>> a29a0fa33cc2e763f9b92ff217adf14dd75bc6d2
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\nvrie\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Users\\jjand\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -70,8 +52,20 @@
           "warn": true,
           "downloadDependencies": [
             {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[3.1.10, 3.1.10]"
+            },
+            {
               "name": "Microsoft.NETCore.App.Host.win-x64",
               "version": "[3.1.31, 3.1.31]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[3.1.0, 3.1.0]"
+            },
+            {
+              "name": "Microsoft.WindowsDesktop.App.Ref",
+              "version": "[3.1.0, 3.1.0]"
             }
           ],
           "frameworkReferences": {

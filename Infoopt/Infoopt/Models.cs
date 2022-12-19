@@ -101,7 +101,7 @@ namespace Infoopt
 
         // Calculate the time change when removing an order between prev and next.
         public static float timeChangeRemoveOrder(DoublyNode<Order> routeOrder)
-        {
+        {   
             Order prev = routeOrder.prev.value;
             Order current = routeOrder.value;
             Order next = routeOrder.next.value;

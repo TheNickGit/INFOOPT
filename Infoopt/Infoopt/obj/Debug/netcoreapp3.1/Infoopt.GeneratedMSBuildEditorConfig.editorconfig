@@ -1,7 +1,3 @@
 is_global = true
 build_property.RootNamespace = Infoopt
-<<<<<<< HEAD
 build_property.ProjectDir = C:\Users\jjand\Documents\GitHub\infoopt\Infoopt\infoopt\
-=======
-build_property.ProjectDir = C:\Users\nvrie\OneDrive\Documenten\Git Repositories\infoopt\Infoopt\Infoopt\
->>>>>>> a29a0fa33cc2e763f9b92ff217adf14dd75bc6d2

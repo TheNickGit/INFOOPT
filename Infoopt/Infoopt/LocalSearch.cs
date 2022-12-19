@@ -119,7 +119,7 @@ namespace Infoopt
             if (tripOrder.value.freq == 1)
                 TryRemoveOrderSingleFreq(dayRoute, routeTrip, tripOrder);
             else 
-                TryRemoveOrderSingleFreq(dayRoute, routeTrip, tripOrder);
+                TryRemoveOrderMultipleFreq(dayRoute, routeTrip, tripOrder);
         }
 
 
@@ -267,6 +267,9 @@ namespace Infoopt
             float[] timeChanges = new float[tripOrder.value.freq];
             for (int i = 0; i < tripOrder.value.freq; i++)
             {
+                // TODO: HIER GAAT IETS MIS, WANT CURRENT TRIPORDER (TARGETLIST[I].ITEM1) 
+                // ZIJN PREV/TAIL STAAT OP NULL; NA WAT INTROSPECTIE VALT ME OP DAT 
+                // DE TRIP WAARVAN HIJ DE TRIPORDER WILT VERWIJDEREN SOMS LEEG IS
                 timeChanges[i] = Schedule.timeChangeRemoveOrder(targetList[i].Item1);
                 if(!targetList[i].Item2.canAddTimeChange(timeChanges[i]))
                     return;
