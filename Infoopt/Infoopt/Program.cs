@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Linq;
 
 class Program
 {
     // Config:
-    static readonly int totalIterations = 5_000_000;
+    static readonly int totalIterations = 50_000_000;
 
+    public static RandomGen random = new RandomGen();
     public static Order
         startOrder = new Order(0, "MAARHEEZE-start", 0, 0, 0, 0, 287, 56343016, 513026712), // The startlocation of each day.
         stopOrder = new Order(0, "MAARHEEZE-stort", 0, 0, 0, 30, 287, 56343016, 513026712); // The 'stortplaats'
@@ -17,10 +20,19 @@ class Program
         Order[] orders = FetchOrders(orderFilePath, distancesFilePath);
 
         LocalSearch LS = new LocalSearch(orders);
+        Stopwatch sw = Stopwatch.StartNew();
+        sw.Start();
         LS.Run(totalIterations);
-
+        sw.Stop();
+        double seconds = Math.Round(sw.ElapsedMilliseconds / 1000f, 1);
         PrintLSCheckerOutput(LS);
         PrintLSDisplay(LS);
+
+        Console.WriteLine("Adds:    " + LS.adds);
+        Console.WriteLine("Removes: " + LS.removes);
+        Console.WriteLine("Shifts:  " + LS.shifts);
+        Console.WriteLine("Swaps:   " + LS.swaps);
+        Console.WriteLine("Total time spent iterating: " + seconds + " sec");
     }
 
     /// <summary>
@@ -28,20 +40,24 @@ class Program
     /// </summary>
     public static void PrintLSCheckerOutput(LocalSearch LS)
     {
-        int n = 1;
+        int truckNr = 1;
         foreach (Truck truck in LS.trucks)
         {
-            foreach (int day in Enum.GetValues(typeof(Day)))
+            int day = 1;
+            foreach (DaySchedule route in truck.schedule.weekSchedule)
             {
-                int j = 0;
-                foreach (DoublyNode<Order> node in truck.schedule.weekRoutes[day].orders)
+                int routeNr = 1;
+                foreach (RouteTrip trip in route.trips)
                 {
-                    int orderId = node.value.nr;
-                    if (j > 0) Console.WriteLine($"{n}; {day + 1}; {j}; {orderId}");
-                    j++;
+                    foreach (DoublyNode<Order> node in trip.orders)
+                    {
+                        if (!trip.orders.IsHead(node))
+                            Console.WriteLine($"{truckNr}; {day}; {routeNr++}; {node.value.nr}");
+                    }
                 }
+                day += 1;
             }
-            n++;
+            truckNr++;
         }
     }
 
@@ -50,12 +66,10 @@ class Program
     /// </summary>
     public static void PrintLSDisplay(LocalSearch LS)
     {
-        int i = 0;
-        foreach (Truck truck in LS.trucks)
-        {
-            string msg = $"========== TRUCK {++i} ==========\n{truck.schedule.Display()}";
-            Console.Write(msg);
-        }
+        string msg = String.Join('\n', LS.trucks.Select(
+                (truck, i) => $"=========== TRUCK {++i} ===========\n{truck.schedule.Display()}"
+            ));
+        Console.WriteLine(msg);
         Console.WriteLine("\nNEW TOTAL COST:\t" + LS.CalcTotalCost() / 60);
     }
 

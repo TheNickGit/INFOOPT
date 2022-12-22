@@ -13,6 +13,7 @@ class Order
     public bool available;          // signals whether the order is currently available to be taken
 
     public int[] distancesToOthers; // distances to all other orders (index = distId of other order)
+    public int volume { get { return binAmt * binVol; } }
 
     /// <summary>
     /// Constructor.

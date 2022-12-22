@@ -14,21 +14,10 @@ class DoublyList<T>
 
     public bool IsHeadOrTail(DoublyNode<T> node) => this.IsHead(node) || this.IsTail(node);
 
-    // CONSTRUCTOR METHODS
-    public static DoublyList<T> FromArray(T[] values)
-    {
-        DoublyNode<T> head = null, tail = null;
-        foreach (T value in values)
-        {
-            if (Object.ReferenceEquals(head, null))
-                head = tail = new DoublyNode<T>(value);
-            else
-                tail = tail.ExtendNext(value);
-        }
-        // TODO: Voeg de lengte van values[] toe aan de Length variabel
-        return new DoublyList<T>(head, tail);
-    }
 
+    /// <summary>
+    /// Constructor.
+    /// </summary>
     public DoublyList(DoublyNode<T> head = null, DoublyNode<T> tail = null)
     {
         if (!Object.ReferenceEquals(head, null) && !Object.ReferenceEquals(tail, null))
@@ -174,5 +163,16 @@ class DoublyList<T>
         if (current.value.Equals(target))
             return current;
         else return null;
+    }
+
+    /// <summary>
+    /// Enumerable.
+    /// </summary>
+    public IEnumerable<DoublyNode<T>> ToEnumerable()
+    {
+        foreach (DoublyNode<T> node in this)
+        {
+            yield return node;
+        }
     }
 }
