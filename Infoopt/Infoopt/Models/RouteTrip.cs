@@ -5,6 +5,7 @@ class RouteTrip
 {
     public DaySchedule parent;
     public DoublyList<Order> orders;
+    int randomWalkLength = 3;
     public float timeToComplete = 0f;
     public float totalTime { get { return parent.timeToComplete; } }
     public int volumePickedUp = 0;
@@ -78,6 +79,36 @@ class RouteTrip
         int i = Program.random.Next(1, this.orders.Length); // dont take the starting order
         return orders.head.SkipForward(i);
     }
+
+    ///// <summary>
+    ///// With randomPointer.
+    ///// </summary>
+    ///// <returns></returns>
+    //public DoublyNode<Order> getRandomOrderNode2()
+    //{
+    //    int distance = Program.random.Next(randomWalkLength);
+    //    int direction = Program.random.Next(2);
+    //    DoublyNode<Order> node = randomPointer;
+    //    if (direction == 0)
+    //    {
+    //        for (int i = 0; i <= distance; i++)
+    //        {
+    //            node = node.prev;
+    //            if (node.prev == null)
+    //                return node.next;
+    //        }
+    //    }
+    //    else
+    //    {
+    //        for (int i = 0; i <= distance; i++)
+    //        {
+    //            if (node.next == null)
+    //                return node;
+    //            node = node.next;
+    //        }
+    //    }
+    //    return node;
+    //}
 
     /// <summary>
     /// shifts two orders within same route

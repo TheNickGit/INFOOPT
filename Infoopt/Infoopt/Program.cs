@@ -4,9 +4,13 @@ using System.Linq;
 
 class Program
 {
-    // Config:
-    static readonly int totalIterations = 50_000_000;
 
+    /*
+     * A configuration of the variables used in the algorithm can be found at the top of the Local Search class.
+     * These variables can be changed to influence the flow of the algorithm.
+     */
+
+    // Static variables that are accessed by multiple classes during the LS process.
     public static RandomGen random = new RandomGen();
     public static Order
         startOrder = new Order(0, "MAARHEEZE-start", 0, 0, 0, 0, 287, 56343016, 513026712), // The startlocation of each day.
@@ -22,7 +26,7 @@ class Program
         LocalSearch LS = new LocalSearch(orders);
         Stopwatch sw = Stopwatch.StartNew();
         sw.Start();
-        LS.Run(totalIterations);
+        LS.Run();
         sw.Stop();
         double seconds = Math.Round(sw.ElapsedMilliseconds / 1000f, 1);
         PrintLSCheckerOutput(LS);
@@ -81,6 +85,11 @@ class Program
         // parse orders and distances
         Order[] orders = Parser.ParseOrders(orderFilePath, nOrders: 1177);
         int[][] distances = Parser.ParseOrderDistances(distancesFilePath, nDistances: 1099);
+
+        for (int i = 0; i < orders.Length; i++)
+        {
+            orders[i].spot = i;
+        }
 
         // link distances to orders
         startOrder.distancesToOthers = distances[startOrder.distId];

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 class Order
 {
@@ -7,7 +8,8 @@ class Order
         freq,                       // weekly frequency of order
         binAmt,                     // amount of bins
         binVol,                     // volume of bins
-        distId;                     // id of distance of order in distance-matrix (NOTE, DIFFERENT ORDERS MIGHT HAVE SAME DISTANCE ID ENTRY)
+        distId,                     // id of distance of order in distance-matrix (NOTE, DIFFERENT ORDERS MIGHT HAVE SAME DISTANCE ID ENTRY)
+        spot;
     public float emptyDur;          // time it takes to empty the bins of this order
     public (int X, int Y) coord;    // coordinates of order
     public bool available;          // signals whether the order is currently available to be taken
