@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Linq;
+using System.IO;
 
 class Program
 {
@@ -35,6 +36,8 @@ class Program
 =======
 
 
+        SaveLSCheckerOutput(LS);
+
 
         /*
 >>>>>>> Stashed changes
@@ -48,11 +51,17 @@ class Program
 
     }
 
+    public static void SaveLSCheckerOutput(LocalSearch LS) {
+        using (StreamWriter sw = new StreamWriter($"./solutions/{LS.CalcTotalCost()}.csv")) 
+            PrintLSCheckerOutput(LS, cout: sw);
+    }
+
     /// <summary>
     /// print the LS with checker output
     /// </summary>
-    public static void PrintLSCheckerOutput(LocalSearch LS)
+    public static void PrintLSCheckerOutput(LocalSearch LS, TextWriter cout=null)
     {
+        cout ??= Console.Out;
         int truckNr = 1;
         foreach (Truck truck in LS.trucks)
         {
@@ -65,7 +74,7 @@ class Program
                     foreach (DoublyNode<Order> node in trip.orders)
                     {
                         if (!trip.orders.IsHead(node))
-                            Console.WriteLine($"{truckNr}; {day}; {routeNr++}; {node.value.nr}");
+                            cout.WriteLine($"{truckNr}; {day}; {routeNr++}; {node.value.nr}");
                     }
                 }
                 day += 1;
@@ -83,7 +92,7 @@ class Program
                 (truck, i) => $"=========== TRUCK {++i} ===========\n{truck.schedule.Display()}"
             ));
         Console.WriteLine(msg);
-        Console.WriteLine("\nNEW TOTAL COST:\t" + LS.CalcTotalCost() / 60);
+        Console.WriteLine("\nNEW TOTAL COST:\t" + LS.CalcTotalCost());
     }
 
     /// <summary>
