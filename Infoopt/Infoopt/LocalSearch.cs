@@ -421,6 +421,6 @@ class LocalSearch
             cost += truck.schedule.TimeCost();
         }
 
-        return cost;
+        return cost / 60f; // in minutes
     }
 }

@@ -29,8 +29,15 @@ class Program
         LS.Run();
         sw.Stop();
         double seconds = Math.Round(sw.ElapsedMilliseconds / 1000f, 1);
+<<<<<<< Updated upstream
         PrintLSCheckerOutput(LS);
 
+=======
+
+
+
+        /*
+>>>>>>> Stashed changes
         PrintLSDisplay(LS);
 
         Console.WriteLine("Adds:    " + LS.adds);
