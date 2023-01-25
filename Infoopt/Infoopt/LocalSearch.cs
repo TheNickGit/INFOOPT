@@ -1,12 +1,17 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System;
 using System.ComponentModel;
 
 class LocalSearch
 {
+    public static Stopwatch sw = new Stopwatch();
+    public static bool showProgress = true;
+    public static int showProgressPerIterations = 99_000;
+
     // Config:
     public static double
-        totalIterations = 60_000_000,
+        totalIterations = 10_000_000,
         chanceAdd = 0.02,           // Chances are cumulative up to 1.00
         chanceRemove = 0.01,
         chanceShift = 0.00,
@@ -96,18 +101,37 @@ class LocalSearch
         trucks[1].schedule.weekSchedule[4].AddTrip();
     }
 
+
+    public void DisplayProgress(int it)
+    {
+        if (it % showProgressPerIterations == 0) {
+            double progress = Math.Round(100 * (((float)it) / ((float)totalIterations)), 1);
+            double duration = Math.Round(sw.ElapsedMilliseconds / 1000f, 1);
+            double controlParam = Math.Round(T, 3);
+            string[] args = new string[3] {
+                progress.ToString().PadLeft(4),
+                duration.ToString().PadLeft(6),
+                controlParam.ToString().PadLeft(6)
+            };
+            Console.Error.Write(String.Format("LS progress: {0} % ({1} s; {2} T)\r", args));
+        }
+    }
+
     /// <summary>
     /// Run the Local Search algorithm.
     /// </summary>
     public void Run()
     {
-        for (int i = 1; i <= totalIterations; i++)
+        sw.Start();
+        for (int i = 1; i < totalIterations; i++)
         {
             Iteration();
             if (i % coolDownIts == 0)
                 T *= alpha;
             if (i % reheat == 0)
                 T = reheatT;
+            if (showProgress)
+                this.DisplayProgress(i);
         }
     }
 
@@ -422,6 +446,6 @@ class LocalSearch
             cost += truck.schedule.TimeCost();
         }
 
-        return cost;
+        return cost / 60f; // in minutes
     }
 }
