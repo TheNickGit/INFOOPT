@@ -30,17 +30,12 @@ class Program
         LS.Run();
         sw.Stop();
         double seconds = Math.Round(sw.ElapsedMilliseconds / 1000f, 1);
-<<<<<<< Updated upstream
         PrintLSCheckerOutput(LS);
 
-=======
+
+        SaveLSCheckerOutput(LS);    // saves output to ./solution/<score>.csv
 
 
-        SaveLSCheckerOutput(LS);
-
-
-        /*
->>>>>>> Stashed changes
         PrintLSDisplay(LS);
 
         Console.WriteLine("Adds:    " + LS.adds);
