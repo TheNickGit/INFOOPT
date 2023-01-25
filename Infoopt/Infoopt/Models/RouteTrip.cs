@@ -118,4 +118,11 @@ class RouteTrip
         DoublyList<Order>.SwapNodes(routeOrder, routeOrder2);    // swap values of nodes (orders)
         timeToComplete += timeChange;                             // modify total route time to complete
     }
+
+    // shift 'routeOrder' before 'routeOrder2' within the trip
+    public void PureShiftOrderBeforeOther(DoublyNode<Order> routeOrder, DoublyNode<Order> routeOrder2, float timeChange) {
+        this.orders.EjectAfterNode(routeOrder.prev);                    // remove routeOrder1 from its position
+        this.orders.InsertBeforeNode(routeOrder.value, routeOrder2);    // insert routeOrder before routeOrder2
+        this.timeToComplete += timeChange;
+    }
 }

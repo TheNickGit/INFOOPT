@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 class Order
 {
+    public static int[][] travelDistances;     // static 2D matrix of travelling times between orders (indexed by distId)
+
+
     public string place;            // place name of order
     public int nr,                  // trivial order id
         freq,                       // weekly frequency of order
@@ -14,7 +17,7 @@ class Order
     public (int X, int Y) coord;    // coordinates of order
     public bool available;          // signals whether the order is currently available to be taken
 
-    public int[] distancesToOthers; // distances to all other orders (index = distId of other order)
+    
     public int volume { get { return binAmt * binVol; } }
 
     /// <summary>
@@ -58,7 +61,7 @@ class Order
     public int DistanceTo(Order other)
     {
         if (this.distId == other.distId) return 0;
-        return this.distancesToOthers[other.distId];
+        return travelDistances[this.distId][other.distId];
     }
 }
 

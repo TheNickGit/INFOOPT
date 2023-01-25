@@ -30,6 +30,7 @@ class Program
         sw.Stop();
         double seconds = Math.Round(sw.ElapsedMilliseconds / 1000f, 1);
         PrintLSCheckerOutput(LS);
+        /*
         PrintLSDisplay(LS);
 
         Console.WriteLine("Adds:    " + LS.adds);
@@ -37,6 +38,7 @@ class Program
         Console.WriteLine("Shifts:  " + LS.shifts);
         Console.WriteLine("Swaps:   " + LS.swaps);
         Console.WriteLine("Total time spent iterating: " + seconds + " sec");
+        */
     }
 
     /// <summary>
@@ -82,20 +84,13 @@ class Program
     /// </summary>
     public static Order[] FetchOrders(string orderFilePath, string distancesFilePath)
     {
-        // parse orders and distances
+        // parse orders and distances, and make the distances available to be used by the orders
         Order[] orders = Parser.ParseOrders(orderFilePath, nOrders: 1177);
-        int[][] distances = Parser.ParseOrderDistances(distancesFilePath, nDistances: 1099);
+        Order.travelDistances = Parser.ParseOrderDistances(distancesFilePath, nDistances: 1099);
 
-        for (int i = 0; i < orders.Length; i++)
-        {
+        for (int i = 0; i < orders.Length; i++) {
             orders[i].spot = i;
         }
-
-        // link distances to orders
-        startOrder.distancesToOthers = distances[startOrder.distId];
-        stopOrder.distancesToOthers = distances[stopOrder.distId];
-        foreach (Order order in orders)
-            order.distancesToOthers = distances[order.distId];
 
         return orders;
     }

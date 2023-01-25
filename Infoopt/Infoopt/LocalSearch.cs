@@ -5,28 +5,40 @@ class LocalSearch
 {
     // Config:
     public static double
-        totalIterations = 50_000_000,
-        chanceAdd = 0.15,           // Chances are cumulative up to 1.00
-        chanceRemove = 0.10,
-        chanceShift = 0.40,
-        chanceSwap = 0.35,
+        totalIterations = 10_000_000,
+
+        chanceAdd = 0.25,           // Chances are cumulative up to 1.00
+        chanceRemove = 0.15,
+        chanceShift = 0.00,
+        chanceSwap = 0.00,
+        chancePureShiftWithinTrip = 0.40,
+        chancePureShiftBetweenTrips = 0.20,
+
         alpha = 0.99,               // Rate at which T declines
         startT = 0.50,              // Starting chance to accept worse outcomes
         T = startT,
         reheatT = startT,           // When reheating, T will be set to this
         coolDownIts = 10000,        // Amount of iterations after which T*alpha happens
         reheat = 30_000_000,        // Reset T after this amount of iterations
+
         pCorrectionAdd = 20000,     // For adds - Increase for more accepted adds
         pCorrectionRemove = 2000,   // For removes - Increase for more accepted removes
         pCorrectionShift = 100,     // For shifts - Increase for more accepted shifts
-        pCorrectionSwap = 1000;      // For swaps - Increase for more accepted swaps
+        pCorrectionSwap = 1000,      // For swaps - Increase for more accepted swaps
+
+        pCorrectionPureShiftWithinTrip = 100,
+        pCorrectionPureShiftBetweenTrips = 100;
+
+
 
     // Counters (for debugging)
     public int
         adds = 0,
         removes = 0,
         shifts = 0,
-        swaps = 0;
+        swaps = 0,
+        pureShiftsWithinTrip = 0,
+        pureShiftsBetweenTrips = 0;
 
     // Properties
     public Order[] orders;
@@ -98,10 +110,19 @@ class LocalSearch
             TryAddOrder();
         else if (choice < chanceAdd + chanceRemove) // Chance Remove
             TryRemoveOrder();
+
+        else if (choice < chanceAdd + chanceRemove + chancePureShiftWithinTrip)
+            TryPureShiftWithinTrip();
+
+        else if (choice < chanceAdd + chanceRemove + chancePureShiftWithinTrip + chancePureShiftBetweenTrips)
+            TryPureShiftBetweenTrips();
+
+        /*
         else if (choice < chanceAdd + chanceRemove + chanceShift) // Chance Shift
             TryShiftOrders();
         else if (choice < chanceAdd + chanceRemove + chanceShift + chanceSwap) // Chance Swap
             TrySwapOrders();
+        */
     }
 
     /// <summary>
@@ -210,6 +231,89 @@ class LocalSearch
             removes++;
         }
     }
+
+    // Try shift an order of a trip before another order of that trip (regardless of order pickup frequency)
+    void TryPureShiftWithinTrip() {
+
+        // Get a valid shiftable route trip
+        RouteTrip trip = RandomRouteTrip();
+        if (trip.orders.Length <= 3) 
+            return; // For 3 or less orders, shifting an order within a trip is not possible
+
+        // Get valid order nodes for shift
+        DoublyNode<Order> orderNode1 = trip.getRandomOrderNode();
+        DoublyNode<Order> orderNode2 = trip.getRandomOrderNode();
+        if (orderNode2.Equals(orderNode1) || orderNode1.value.freq == 0 || orderNode2.value.freq == 0)
+            return; // cannot shift with start/stortplaatsen or itself
+
+        // Calculate change in time and see if the shift can fit in the schedule.
+        float timeChange = Schedule.TimeChangePureShiftWithinTrip(orderNode1, orderNode2);
+        if (trip.totalTime + timeChange > maxDayTime)
+            return; 
+
+        // Calculate cost change and see if shifting this order is an improvement.
+        float costChange = timeChange;  // equal because cost penalty wont be applied in within trip shift
+        double p = Math.Exp(-costChange / T / pCorrectionPureShiftWithinTrip);
+
+        if (costChange < 0 || Program.random.NextDouble() < p) {
+            trip.PureShiftOrderBeforeOther(orderNode1, orderNode2, timeChange);
+            pureShiftsWithinTrip++;
+        }
+        
+    }
+
+    // Try shift an order of a trip before an order of another trip
+    void TryPureShiftBetweenTrips() {
+
+        // Get valid route trips
+        RouteTrip trip = RandomRouteTrip(),
+            trip2 = RandomRouteTrip();
+        while (trip2.Equals(trip))
+            trip2 = RandomRouteTrip();
+        if (trip.orders.Length < 3 || trip2.orders.Length < 3)
+            return; // Either trips should have at least 1 order apart from start/stort in order to be shiftable
+        
+        // Get valid order nodes for shift
+        DoublyNode<Order> orderNode1 = trip.getRandomOrderNode();
+        DoublyNode<Order> orderNode2 = trip2.getRandomOrderNode();
+
+        if (orderNode1.value.freq == 0 || orderNode2.value.freq == 0 )
+            return; // cannot shift with start/stortplaatsen
+
+        if (orderNode1.value.freq != 1)
+            return; // cannot just shift an order of freq>1 to another random trip
+
+        if (!trip2.CanAddVolume(orderNode1.value.volume))
+            return; // ordernode1 does not fit capacity-wise when shifted to trip2
+
+
+        // Calculate change in time and see if the shift can fit in the schedule.
+        (float timeChangeRemove, float timeChangeInsert) = Schedule.TimeChangePureShiftBetweenTrips(orderNode1, orderNode2);
+        if (trip2.totalTime + timeChangeInsert > maxDayTime)
+            return; // ordernode1 does not fit time-wise when shifted to trip2
+
+
+        // Calculate cost change and see if shifting this order is an improvement.
+        float costChange = (timeChangeRemove + timeChangeInsert);  // equal to full time change because cost penalty wont be applied in between trips shift
+        double p = Math.Exp(-costChange / T / pCorrectionPureShiftBetweenTrips);
+
+        if (costChange < 0 || Program.random.NextDouble() < p) {
+            // place order1 before order2
+            trip.orders.EjectAfterNode(orderNode1.prev);
+            trip2.orders.InsertBeforeNode(orderNode1.value, orderNode2);
+
+            // modify trip times to complete
+            trip.timeToComplete += timeChangeRemove;
+            trip2.timeToComplete += timeChangeInsert;
+
+            // modify trip volumes
+            trip.volumePickedUp -= orderNode1.value.volume;
+            trip2.volumePickedUp += orderNode1.value.volume;
+
+            pureShiftsBetweenTrips++;
+        }
+    }
+
 
     /// <summary>
     /// Try to shift two orders in the same route.

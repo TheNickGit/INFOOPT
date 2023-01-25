@@ -169,6 +169,48 @@ class Schedule
         return (pickupTimeCost + newDistanceCost) - (pickupTimeGain + oldDistanceGain);
     }
 
+    // time chang of shifting 'routeOrder' before 'routeOrder2' within same trips (pickup times are unchanged)
+    public static float TimeChangePureShiftWithinTrip(DoublyNode<Order> routeOrder, DoublyNode<Order> routeOrder2) {
+        Order order = routeOrder.value,
+            order2 = routeOrder2.value;
+
+        bool secondFollowsFirst = routeOrder.next.value == order2;
+        bool firstFollowsSecond = routeOrder.prev.value == order2;
+
+        float oldTime, newTime;
+        if (secondFollowsFirst) 
+            return 0f;                      // 'routeOrder' is already placed in front of 'routeorder2'
+        else if (firstFollowsSecond)
+        {
+            oldTime = routeOrder2.prev.value.DistanceTo(order2) + order2.DistanceTo(order) + order.DistanceTo(routeOrder.next.value);   // old time of order2 before order1
+            newTime = routeOrder2.prev.value.DistanceTo(order) + order.DistanceTo(order2) + order2.DistanceTo(routeOrder.next.value);   // new time of order1 before order2
+            return (newTime - oldTime);     // pickup times are unchanged
+        }
+        else {
+            oldTime = (routeOrder.prev.value.DistanceTo(order) + order.DistanceTo(routeOrder.next.value))       // old time to+from order1
+                        + routeOrder2.prev.value.DistanceTo(order2);                                            // old time to order2
+            newTime = (routeOrder2.prev.value.DistanceTo(order) + order.DistanceTo(order2))                     // new time to+from order1 shifted before order2
+                        + routeOrder.prev.value.DistanceTo(routeOrder.next.value);                              // new time stiching prev and next of order1 together
+            return (newTime - oldTime);     // pickup times are unchanged
+        }
+    }
+
+    // time chang of shifting 'routeOrder' before 'routeOrder2' between different trips (pickup times are unchanged)
+    public static (float, float) TimeChangePureShiftBetweenTrips(DoublyNode<Order> routeOrder, DoublyNode<Order> routeOrder2) {
+        Order order = routeOrder.value,
+            order2 = routeOrder2.value;
+
+        float timeChangeRemove, timeChangeInsert;
+        timeChangeRemove = routeOrder.prev.value.DistanceTo(routeOrder.next.value)                              // new time stiching prev and next of order1 together
+                    - (routeOrder.prev.value.DistanceTo(order) + order.DistanceTo(routeOrder.next.value))       // old time to+from order1
+                    - order.emptyDur;                                                                           // old time of picking up order1
+        timeChangeInsert = (routeOrder2.prev.value.DistanceTo(order) + order.DistanceTo(order2))                // new time to+from order1 shifted before order2
+                    + order.emptyDur                                                                            // new time of picking up order1
+                    - routeOrder2.prev.value.DistanceTo(order2);                                                // old time to order2
+      
+        return (timeChangeRemove, timeChangeInsert);
+    }
+
     /// <summary>
     /// Calculate the time change when shifting orders.
     /// </summary>

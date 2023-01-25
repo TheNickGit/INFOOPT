@@ -51,12 +51,12 @@ internal class Parser
             int nDistPerms = nDistances * nDistances;
             while (nDistPerms-- > 0)
             {
-                (int fromId, int toId, int data) = ParseDistance(sr.ReadLine());
+                (int fromId, int toId, int travelDur) = ParseDistance(sr.ReadLine());
 
                 // create new nested array in 2D matrix if not present yet
                 if (distances[fromId] is null)
                     distances[fromId] = new int[nDistances];
-                distances[fromId][toId] = data;
+                distances[fromId][toId] = travelDur;
             }
         }
         return distances;
@@ -65,7 +65,7 @@ internal class Parser
     /// <summary>
     /// PARSE A SINGLE ORDER DISTANCE FROM CSV FORMATTED FILE LINE
     /// </summary>
-    private static (int fromId, int toId, int data) ParseDistance(string line)
+    private static (int fromId, int toId, int travelDur) ParseDistance(string line)
     {
         int[] args = line.Split(';').Select(a => int.Parse(a)).ToArray();
         return (args[0], args[1], args[3]);
