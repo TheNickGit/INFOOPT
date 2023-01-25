@@ -15,7 +15,6 @@ class Order
         spot;
     public float emptyDur;          // time it takes to empty the bins of this order
     public (int X, int Y) coord;    // coordinates of order
-    public bool available;          // signals whether the order is currently available to be taken
 
     
     public int volume { get { return binAmt * binVol; } }

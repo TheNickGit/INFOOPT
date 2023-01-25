@@ -1,17 +1,18 @@
 ﻿using System.Collections.Generic;
 using System;
+using System.ComponentModel;
 
 class LocalSearch
 {
     // Config:
     public static double
-        totalIterations = 20_000_000,
+        totalIterations = 60_000_000,
         chanceAdd = 0.02,           // Chances are cumulative up to 1.00
         chanceRemove = 0.01,
         chanceShift = 0.00,
         chanceSwap = 0.00,
-        chancePureShiftWithinTrip = 0.10,
-        chancePureShiftBetweenTrips = 0.87,
+        chancePureShiftWithinTrip = 0.30,
+        chancePureShiftBetweenTrips = 0.67,
         alpha = 0.99,               // Rate at which T declines
         startT = 0.50,              // Starting chance to accept worse outcomes
         T = startT,
@@ -81,6 +82,18 @@ class LocalSearch
         }
 
         trucks = new Truck[2] { new Truck(), new Truck() };
+
+        // Config for extra trips.
+        trucks[0].schedule.weekSchedule[0].AddTrip();
+        //trucks[0].schedule.weekSchedule[1].AddTrip();
+        //trucks[0].schedule.weekSchedule[2].AddTrip();
+        trucks[0].schedule.weekSchedule[3].AddTrip();
+        trucks[0].schedule.weekSchedule[4].AddTrip();
+        trucks[1].schedule.weekSchedule[0].AddTrip();
+        //trucks[1].schedule.weekSchedule[1].AddTrip();
+        //trucks[1].schedule.weekSchedule[2].AddTrip();
+        trucks[1].schedule.weekSchedule[3].AddTrip();
+        trucks[1].schedule.weekSchedule[4].AddTrip();
     }
 
     /// <summary>
@@ -148,29 +161,21 @@ class LocalSearch
             targetRouteList[i] = (target, trip);
         }
 
-        // Calculate change in time and see if the order can fit in the schedule.
+        // Calculate changes in cost, time and volume and see if this fits.
         float[] timeChanges = new float[order.freq];
-        for (int i = 0; i < order.freq; i++)
-        {
-            foreach (RouteTrip trip in targetRouteList[i].Item2.parent.trips)
-                if (trip.CanAddVolume(order.volume))
-                {
-                    targetRouteList[i].Item1 = trip.getRandomOrderNode();
-                    targetRouteList[i].Item2 = trip;
-                }
-
-            bool newTrip = !targetRouteList[i].Item2.CanAddVolume(order.volume);
-            timeChanges[i] = Schedule.TimeChangeAdd(order, targetRouteList[i].Item1, newTrip);
-            if (targetRouteList[i].Item2.totalTime + timeChanges[i] > maxDayTime)
-                return;
-        }
-
-        // Calculate cost change and see if adding this order here is an improvement.
         float totalCostChange = 0;
         for (int i = 0; i < order.freq; i++)
         {
-            bool newTrip = !targetRouteList[i].Item2.CanAddVolume(targetRouteList[i].Item1.value.volume);
-            totalCostChange += Schedule.CostChangeAdd(order, targetRouteList[i].Item1, newTrip);
+            if (!targetRouteList[i].Item2.CanAddVolume(order.volume))
+                return;
+
+            // Time change
+            timeChanges[i] = Schedule.TimeChangeAdd(order, targetRouteList[i].Item1);
+            if (targetRouteList[i].Item2.totalTime + timeChanges[i] > maxDayTime)
+                return;
+
+            // Cost change
+            totalCostChange += Schedule.CostChangeAdd(order, targetRouteList[i].Item1);
         }
         double p = Math.Exp(-totalCostChange / T / pCorrectionAdd);
 
@@ -206,22 +211,19 @@ class LocalSearch
                         if (routeTrip.orders.Contains(order))
                             targetRouteList.Add((routeTrip.orders.Find(order), routeTrip));
 
-        // Calculate change in time and see if removing the order can time-wise.
+        // Calculate change in time and cost.
         float[] timeChanges = new float[order.freq];
-        for (int i = 0; i < order.freq; i++)
-        {
-            bool onlyTrip = true;
-            if (targetRouteList[i].Item2.parent.trips.Count > 1)
-                onlyTrip = false;
-            timeChanges[i] = Schedule.TimeChangeRemove(targetRouteList[i].Item1, onlyTrip);
-            if (targetRouteList[i].Item2.totalTime + timeChanges[i] > maxDayTime)
-                return;
-        }
-
-        // Calculate cost change and see if removing this order is an improvement.
         float totalCostChange = 0;
         for (int i = 0; i < order.freq; i++)
+        {
+            // Time change
+            timeChanges[i] = Schedule.TimeChangeRemove(targetRouteList[i].Item1);
+            if (targetRouteList[i].Item2.totalTime + timeChanges[i] > maxDayTime)
+                return;
+
+            // Cost change
             totalCostChange += Schedule.CostChangeRemove(targetRouteList[i].Item1);
+        }
         double p = Math.Exp(-totalCostChange / T / pCorrectionRemove);
 
         // Remove order.
@@ -409,10 +411,9 @@ class LocalSearch
         float cost = 0.0f;
 
         // Add cost for missed orders
-        foreach (Order order in this.orders.array)
+        for (int i = 0; i < orders.length; i++)
         {
-            if (order.available)
-                cost += 3 * order.freq * order.emptyDur;
+                cost += 3 * orders.array[i].freq * orders.array[i].emptyDur;
         }
 
         // Add cost for time on the road

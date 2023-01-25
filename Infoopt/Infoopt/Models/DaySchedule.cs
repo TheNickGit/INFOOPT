@@ -13,8 +13,7 @@ class DaySchedule
     public DaySchedule()
     {
         trips = new List<RouteTrip>();
-        RouteTrip trip = AddTrip();
-        trip.timeToComplete = Truck.unloadTime;
+        AddTrip();
     }
 
     /// <summary>
@@ -36,17 +35,17 @@ class DaySchedule
         return trip;
     }
 
-    /// <summary>
-    /// Remove a trip if it's completely emptied by a remove operation and it's not the only trip left.
-    /// </summary>
-    public void RemoveTrip(RouteTrip trip)
-    {
-        if (trip.orders.Length <= 2 && trips.Count > 1)
-        {
-            trips.Remove(trip);
-            //Console.WriteLine("------------------------------------------------------Trip removed");
-        }
-    }
+    ///// <summary>
+    ///// Remove a trip if it's completely emptied by a remove operation and it's not the only trip left.
+    ///// </summary>
+    //public void RemoveTrip(RouteTrip trip)
+    //{
+    //    if (trip.orders.Length <= 2 && trips.Count > 1)
+    //    {
+    //        trips.Remove(trip);
+    //        //Console.WriteLine("------------------------------------------------------Trip removed");
+    //    }
+    //}
 
     /// <summary>
     /// Get a random route trip in this dayroute

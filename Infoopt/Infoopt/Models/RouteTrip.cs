@@ -5,7 +5,7 @@ class RouteTrip
 {
     public DaySchedule parent;
     public DoublyList<Order> orders;
-    public float timeToComplete = 0f;
+    public float timeToComplete = Truck.unloadTime;
     public float totalTime { get { return parent.timeToComplete; } }
     public int volumePickedUp = 0;
 
@@ -34,12 +34,11 @@ class RouteTrip
             orders.InsertBeforeNode(order, routeOrder);    // put order before a order already in the route
             timeToComplete += dt;                          // modify total route time to complete 
             volumePickedUp += order.volume;                // add order's garbage volume
-            order.available = false;                       // signal that order has been placed into a route
         }
-        else
-        {
-            parent.AddTrip().AddNewTripOrder(order, dt);
-        }
+        //else
+        //{
+        //    parent.AddTrip().AddNewTripOrder(order, dt);
+        //}
     }
 
     /// <summary>
@@ -58,11 +57,10 @@ class RouteTrip
         orders.EjectAfterNode(routeOrder.prev);        // remove order from route
         timeToComplete += dt;                          // modify total route time to complete
         volumePickedUp -= routeOrder.value.volume;     // remove order's garvage volume
-        routeOrder.value.available = true;             // signal that order has been removed from a route
 
-        // If emptied, ask to be removed.
-        if (orders.Length <= 2)
-            parent.RemoveTrip(this);
+        //// If emptied, ask to be removed.
+        //if (orders.Length <= 2)
+        //    parent.RemoveTrip(this);
     }
 
     /// <summary>

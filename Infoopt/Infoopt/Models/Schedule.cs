@@ -41,20 +41,20 @@ class Schedule
     /// <summary>
     /// Calculate the time change for adding an order between prev and next.
     /// </summary>
-    public static float TimeChangeAdd(Order newOrder, DoublyNode<Order> routeOrder, bool newTrip = false)
+    public static float TimeChangeAdd(Order newOrder, DoublyNode<Order> routeOrder)
     {
         // Get the orders located at the current node and the one before it.
         Order prev, current;
-        if (newTrip)
-        { // In case a new trip has to be made, calculate with the start and stop orders instead.
-            prev = Program.startOrder;
-            current = Program.stopOrder;
-        }
-        else
-        { // Normal process.
+        //if (newTrip)
+        //{ // In case a new trip has to be made, calculate with the start and stop orders instead.
+        //    prev = Program.startOrder;
+        //    current = Program.stopOrder;
+        //}
+        //else
+        //{ // Normal process.
             prev = routeOrder.prev.value;
             current = routeOrder.value;
-        }
+        //}
 
         // Time decreases
         float currentDistanceGain = prev.DistanceTo(current);
@@ -63,8 +63,6 @@ class Schedule
         float newDistanceCost = prev.DistanceTo(newOrder) + newOrder.DistanceTo(current);
         float pickupTimeCost = newOrder.emptyDur;
         float unloadTimeCost = 0;
-        if (newTrip)
-            unloadTimeCost = Truck.unloadTime;
 
         // Calculate change: This number means how much additional time is spend if the order is added
         return (newDistanceCost + pickupTimeCost + unloadTimeCost) - currentDistanceGain;
@@ -73,20 +71,13 @@ class Schedule
     /// <summary>
     /// Calculate the cost change for adding an order between prev and next.
     /// </summary>
-    public static float CostChangeAdd(Order newOrder, DoublyNode<Order> routeOrder, bool newTrip = false)
+    public static float CostChangeAdd(Order newOrder, DoublyNode<Order> routeOrder)
     {
         // Get the orders located at the current node and the one before it.
         Order prev, current;
-        if (newTrip)
-        { // In case a new trip has to be made, calculate with the start and stop orders instead.
-            prev = Program.startOrder;
-            current = Program.stopOrder;
-        }
-        else
-        { // Normal process.
-            prev = routeOrder.prev.value;
-            current = routeOrder.value;
-        }
+        prev = routeOrder.prev.value;
+        current = routeOrder.value;
+
 
         // Gains
         float currentDistanceGain = prev.DistanceTo(current);
@@ -96,8 +87,6 @@ class Schedule
         float newDistanceCost = prev.DistanceTo(newOrder) + newOrder.DistanceTo(current);
         float pickupTimeCost = newOrder.emptyDur;
         float unloadTimeCost = 0;
-        if (newTrip)
-            unloadTimeCost = Truck.unloadTime;
 
         // Calculate change: costs - gains (so a negative result is good!)
         return (newDistanceCost + pickupTimeCost + unloadTimeCost) - (currentDistanceGain + pickupCostGain);
@@ -106,7 +95,7 @@ class Schedule
     /// <summary>
     /// Calculate the time change when removing an order between prev and next.
     /// </summary>
-    public static float TimeChangeRemove(DoublyNode<Order> routeOrder, bool onlyTrip = true)
+    public static float TimeChangeRemove(DoublyNode<Order> routeOrder)
     {
         Order prev = routeOrder.prev.value;
         Order current = routeOrder.value;
@@ -116,8 +105,6 @@ class Schedule
         float pickupTimeGain = current.emptyDur;
         float currentDistanceGain = prev.DistanceTo(current) + current.DistanceTo(next);
         float unloadTimeGain = 0;
-        if (prev.freq == 0 && next.freq == 0 && onlyTrip == false)
-            unloadTimeGain = Truck.unloadTime; // If removing this node would result in deleting the trip, as the unload time.
 
         // time increases
         float newDistanceCost = prev.DistanceTo(next);
