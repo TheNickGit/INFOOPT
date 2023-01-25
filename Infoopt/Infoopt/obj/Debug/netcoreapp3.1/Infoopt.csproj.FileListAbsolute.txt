@@ -54,3 +54,17 @@ C:\Users\nvrie\OneDrive\Bureaublad\GO - Super Geoptimaliseerde team\broncode\Inf
 C:\Users\nvrie\OneDrive\Bureaublad\GO - Super Geoptimaliseerde team\broncode\Infoopt\obj\Debug\netcoreapp3.1\Infoopt.dll
 C:\Users\nvrie\OneDrive\Bureaublad\GO - Super Geoptimaliseerde team\broncode\Infoopt\obj\Debug\netcoreapp3.1\Infoopt.pdb
 C:\Users\nvrie\OneDrive\Bureaublad\GO - Super Geoptimaliseerde team\broncode\Infoopt\obj\Debug\netcoreapp3.1\Infoopt.genruntimeconfig.cache
+C:\Users\nvrie\OneDrive\Bureaublad\GO - Super Geoptimaliseerde Groepje\GO - Super Geoptimaliseerde Groepje\broncode\Infoopt\bin\Debug\netcoreapp3.1\Infoopt.exe
+C:\Users\nvrie\OneDrive\Bureaublad\GO - Super Geoptimaliseerde Groepje\GO - Super Geoptimaliseerde Groepje\broncode\Infoopt\bin\Debug\netcoreapp3.1\Infoopt.deps.json
+C:\Users\nvrie\OneDrive\Bureaublad\GO - Super Geoptimaliseerde Groepje\GO - Super Geoptimaliseerde Groepje\broncode\Infoopt\bin\Debug\netcoreapp3.1\Infoopt.runtimeconfig.json
+C:\Users\nvrie\OneDrive\Bureaublad\GO - Super Geoptimaliseerde Groepje\GO - Super Geoptimaliseerde Groepje\broncode\Infoopt\bin\Debug\netcoreapp3.1\Infoopt.runtimeconfig.dev.json
+C:\Users\nvrie\OneDrive\Bureaublad\GO - Super Geoptimaliseerde Groepje\GO - Super Geoptimaliseerde Groepje\broncode\Infoopt\bin\Debug\netcoreapp3.1\Infoopt.dll
+C:\Users\nvrie\OneDrive\Bureaublad\GO - Super Geoptimaliseerde Groepje\GO - Super Geoptimaliseerde Groepje\broncode\Infoopt\bin\Debug\netcoreapp3.1\Infoopt.pdb
+C:\Users\nvrie\OneDrive\Bureaublad\GO - Super Geoptimaliseerde Groepje\GO - Super Geoptimaliseerde Groepje\broncode\Infoopt\obj\Debug\netcoreapp3.1\Infoopt.csproj.AssemblyReference.cache
+C:\Users\nvrie\OneDrive\Bureaublad\GO - Super Geoptimaliseerde Groepje\GO - Super Geoptimaliseerde Groepje\broncode\Infoopt\obj\Debug\netcoreapp3.1\Infoopt.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\nvrie\OneDrive\Bureaublad\GO - Super Geoptimaliseerde Groepje\GO - Super Geoptimaliseerde Groepje\broncode\Infoopt\obj\Debug\netcoreapp3.1\Infoopt.AssemblyInfoInputs.cache
+C:\Users\nvrie\OneDrive\Bureaublad\GO - Super Geoptimaliseerde Groepje\GO - Super Geoptimaliseerde Groepje\broncode\Infoopt\obj\Debug\netcoreapp3.1\Infoopt.AssemblyInfo.cs
+C:\Users\nvrie\OneDrive\Bureaublad\GO - Super Geoptimaliseerde Groepje\GO - Super Geoptimaliseerde Groepje\broncode\Infoopt\obj\Debug\netcoreapp3.1\Infoopt.csproj.CoreCompileInputs.cache
+C:\Users\nvrie\OneDrive\Bureaublad\GO - Super Geoptimaliseerde Groepje\GO - Super Geoptimaliseerde Groepje\broncode\Infoopt\obj\Debug\netcoreapp3.1\Infoopt.dll
+C:\Users\nvrie\OneDrive\Bureaublad\GO - Super Geoptimaliseerde Groepje\GO - Super Geoptimaliseerde Groepje\broncode\Infoopt\obj\Debug\netcoreapp3.1\Infoopt.pdb
+C:\Users\nvrie\OneDrive\Bureaublad\GO - Super Geoptimaliseerde Groepje\GO - Super Geoptimaliseerde Groepje\broncode\Infoopt\obj\Debug\netcoreapp3.1\Infoopt.genruntimeconfig.cache

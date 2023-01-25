@@ -5,7 +5,6 @@ class RouteTrip
 {
     public DaySchedule parent;
     public DoublyList<Order> orders;
-    int randomWalkLength = 3;
     public float timeToComplete = 0f;
     public float totalTime { get { return parent.timeToComplete; } }
     public int volumePickedUp = 0;

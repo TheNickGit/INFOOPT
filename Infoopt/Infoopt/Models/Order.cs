@@ -37,7 +37,6 @@ class Order
         this.emptyDur = emptyDur * 60;
         this.distId = distId;
         this.coord = (xCoord, yCoord);
-        this.available = true;
     }
 
 

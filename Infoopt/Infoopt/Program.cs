@@ -30,15 +30,15 @@ class Program
         sw.Stop();
         double seconds = Math.Round(sw.ElapsedMilliseconds / 1000f, 1);
         PrintLSCheckerOutput(LS);
-        /*
+
         PrintLSDisplay(LS);
 
         Console.WriteLine("Adds:    " + LS.adds);
         Console.WriteLine("Removes: " + LS.removes);
-        Console.WriteLine("Shifts:  " + LS.shifts);
-        Console.WriteLine("Swaps:   " + LS.swaps);
+        Console.WriteLine("Shifts between:  " + LS.pureShiftsBetweenTrips);
+        Console.WriteLine("Shifts witin:   " + LS.pureShiftsWithinTrip);
         Console.WriteLine("Total time spent iterating: " + seconds + " sec");
-        */
+
     }
 
     /// <summary>
