@@ -16,7 +16,8 @@ class Order
     public float emptyDur;          // time it takes to empty the bins of this order
     public (int X, int Y) coord;    // coordinates of order
 
-    
+    public List<(DoublyNode<Order>, RouteTrip)> links = new List<(DoublyNode<Order>, RouteTrip)>(); // if freq > 1, this is used to link to the same order in different trips.
+
     public int volume { get { return binAmt * binVol; } }
 
     /// <summary>

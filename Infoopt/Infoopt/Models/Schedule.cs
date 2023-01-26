@@ -45,16 +45,8 @@ class Schedule
     {
         // Get the orders located at the current node and the one before it.
         Order prev, current;
-        //if (newTrip)
-        //{ // In case a new trip has to be made, calculate with the start and stop orders instead.
-        //    prev = Program.startOrder;
-        //    current = Program.stopOrder;
-        //}
-        //else
-        //{ // Normal process.
-            prev = routeOrder.prev.value;
-            current = routeOrder.value;
-        //}
+        prev = routeOrder.prev.value;
+        current = routeOrder.value;
 
         // Time decreases
         float currentDistanceGain = prev.DistanceTo(current);

@@ -5,6 +5,7 @@ class RouteTrip
 {
     public DaySchedule parent;
     public DoublyList<Order> orders;
+    public SmartArray<DoublyNode<Order>> orderArray;
     public float timeToComplete = Truck.unloadTime;
     public float totalTime { get { return parent.timeToComplete; } }
     public int volumePickedUp = 0;
@@ -15,6 +16,9 @@ class RouteTrip
     public RouteTrip(DaySchedule parent)
     {
         orders = new DoublyList<Order>(new DoublyNode<Order>(Program.startOrder), new DoublyNode<Order>(Program.stopOrder));
+        orderArray = new SmartArray<DoublyNode<Order>>();
+        orderArray.Add(orders.head);
+        orderArray.Add(orders.tail);
         this.parent = parent;
     }
 
@@ -29,38 +33,24 @@ class RouteTrip
     /// </summary>
     public void AddOrder(Order order, DoublyNode<Order> routeOrder, float dt)
     {
-        if (CanAddVolume(order.volume))
-        {
-            orders.InsertBeforeNode(order, routeOrder);    // put order before a order already in the route
-            timeToComplete += dt;                          // modify total route time to complete 
-            volumePickedUp += order.volume;                // add order's garbage volume
-        }
-        //else
-        //{
-        //    parent.AddTrip().AddNewTripOrder(order, dt);
-        //}
-    }
+        if (!CanAddVolume(order.volume))
+            return;
 
-    /// <summary>
-    /// Add an order to a just newly created trip.Call this when creating a new trip instead of the usual AddOrder().
-    /// </summary>
-    public void AddNewTripOrder(Order order, float dt)
-    {
-        AddOrder(order, orders.tail, dt);
+        orders.InsertBeforeNode(order, routeOrder);    // put order before a order already in the route
+        timeToComplete += dt;                          // modify total route time to complete 
+        volumePickedUp += order.volume;                // add order's garbage volume
+        orderArray.Add(routeOrder.prev);               // add order into the smart array in O(1) time
     }
 
     /// <summary>
     /// removes an order in this route (with time change dt)
     /// </summary>
-    public void RemoveOrder(DoublyNode<Order> routeOrder, float dt)
+    public void RemoveOrder(DoublyNode<Order> routeOrder, int index, float dt)
     {
         orders.EjectAfterNode(routeOrder.prev);        // remove order from route
         timeToComplete += dt;                          // modify total route time to complete
         volumePickedUp -= routeOrder.value.volume;     // remove order's garvage volume
-
-        //// If emptied, ask to be removed.
-        //if (orders.Length <= 2)
-        //    parent.RemoveTrip(this);
+        orderArray.Remove(index);                      // remove order from the smart array in O(1) time
     }
 
     /// <summary>
@@ -71,41 +61,10 @@ class RouteTrip
     /// <summary>
     /// Get a random order node from this trip.
     /// </summary>
-    public DoublyNode<Order> getRandomOrderNode()
+    public (DoublyNode<Order>, int) getRandomOrderNode(int start = 1)
     {
-        int i = Program.random.Next(1, this.orders.Length); // dont take the starting order
-        return orders.head.SkipForward(i);
+        return orderArray.GetRandom(start);
     }
-
-    ///// <summary>
-    ///// With randomPointer.
-    ///// </summary>
-    ///// <returns></returns>
-    //public DoublyNode<Order> getRandomOrderNode2()
-    //{
-    //    int distance = Program.random.Next(randomWalkLength);
-    //    int direction = Program.random.Next(2);
-    //    DoublyNode<Order> node = randomPointer;
-    //    if (direction == 0)
-    //    {
-    //        for (int i = 0; i <= distance; i++)
-    //        {
-    //            node = node.prev;
-    //            if (node.prev == null)
-    //                return node.next;
-    //        }
-    //    }
-    //    else
-    //    {
-    //        for (int i = 0; i <= distance; i++)
-    //        {
-    //            if (node.next == null)
-    //                return node;
-    //            node = node.next;
-    //        }
-    //    }
-    //    return node;
-    //}
 
     /// <summary>
     /// shifts two orders within same route
@@ -117,9 +76,11 @@ class RouteTrip
     }
 
     // shift 'routeOrder' before 'routeOrder2' within the trip
-    public void PureShiftOrderBeforeOther(DoublyNode<Order> routeOrder, DoublyNode<Order> routeOrder2, float timeChange) {
+    public DoublyNode<Order> PureShiftOrderBeforeOther(DoublyNode<Order> routeOrder, DoublyNode<Order> routeOrder2, float timeChange) {
         this.orders.EjectAfterNode(routeOrder.prev);                    // remove routeOrder1 from its position
         this.orders.InsertBeforeNode(routeOrder.value, routeOrder2);    // insert routeOrder before routeOrder2
         this.timeToComplete += timeChange;
+
+        return routeOrder2.prev;
     }
 }

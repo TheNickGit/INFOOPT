@@ -44,6 +44,7 @@ class Program
         Console.WriteLine("Shifts witin:   " + LS.pureShiftsWithinTrip);
         Console.WriteLine("Total time spent iterating: " + seconds + " sec");
 
+
     }
 
     public static void SaveLSCheckerOutput(LocalSearch LS) {

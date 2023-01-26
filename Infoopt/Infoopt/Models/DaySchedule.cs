@@ -31,21 +31,8 @@ class DaySchedule
     {
         RouteTrip trip = new RouteTrip(this);
         trips.Add(trip);
-        //Console.WriteLine("New Trip created--------------------------------------------------");
         return trip;
     }
-
-    ///// <summary>
-    ///// Remove a trip if it's completely emptied by a remove operation and it's not the only trip left.
-    ///// </summary>
-    //public void RemoveTrip(RouteTrip trip)
-    //{
-    //    if (trip.orders.Length <= 2 && trips.Count > 1)
-    //    {
-    //        trips.Remove(trip);
-    //        //Console.WriteLine("------------------------------------------------------Trip removed");
-    //    }
-    //}
 
     /// <summary>
     /// Get a random route trip in this dayroute
@@ -54,29 +41,5 @@ class DaySchedule
     {
         return trips[Program.random.Next(trips.Count)];
     }
-
-    /// <summary>
-    /// Get a random order node from one of this dayschedule's trips.
-    /// </summary>
-    public DoublyNode<Order> getRandomRouteOrder()
-    {
-        RouteTrip trip = getRandomRouteTrip();
-        return trip.getRandomOrderNode();
-    }
-
-    ///// <summary>
-    ///// swaps two orders not within same route; otherwise shiftOrders
-    ///// </summary>
-    //public static void SwapOrders(
-    //        (RouteTrip trip, DoublyNode<Order> routeOrder, float dt, int vt) o,
-    //        (RouteTrip trip, DoublyNode<Order> routeOrder, float dt, int vt) o2
-    //    )
-    //{
-    //    DoublyList<Order>.SwapNodes(o.routeOrder, o2.routeOrder);   // swap values of nodes (orders)
-    //    o.trip.timeToComplete += o.dt;                             // modify total route time to complete
-    //    o.trip.volumePickedUp += o.vt;                             // modify route garbage volume
-    //    o2.trip.timeToComplete += o2.dt;                           // modify total route2 time to complete
-    //    o2.trip.timeToComplete += o2.vt;                           // modify route garbage volume
-    //}
 }
 

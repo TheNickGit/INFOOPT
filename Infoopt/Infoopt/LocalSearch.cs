@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System;
 using System.ComponentModel;
+using System.Reflection;
 
 class LocalSearch
 {
@@ -11,7 +12,7 @@ class LocalSearch
 
     // Config:
     public static double
-        totalIterations = 10_000_000,
+        totalIterations = 100_000_000,
         chanceAdd = 0.02,           // Chances are cumulative up to 1.00
         chanceRemove = 0.01,
         chanceShift = 0.00,
@@ -27,8 +28,6 @@ class LocalSearch
 
         pCorrectionAdd = 8000,     // For adds - Increase for more accepted adds
         pCorrectionRemove = 1000,   // For removes - Increase for more accepted removes
-        //pCorrectionShift = 100,     // For shifts - Increase for more accepted shifts
-        //pCorrectionSwap = 1000,      // For swaps - Increase for more accepted swaps
         pCorrectionPureShiftWithinTrip = 100,
         pCorrectionPureShiftBetweenTrips = 1000;
 
@@ -44,7 +43,6 @@ class LocalSearch
         pureShiftsBetweenTrips = 0;
 
     // Properties
-    //public Order[] orders;
     public SmartArray<Order> orders;
     public Truck[] trucks;
     public static int maxDayTime = 43200;
@@ -80,7 +78,7 @@ class LocalSearch
     /// </summary>
     public LocalSearch(Order[] orders)
     {
-        this.orders = new SmartArray<Order>(orders.Length);
+        this.orders = new SmartArray<Order>();
         foreach (Order order in orders)
         {
             this.orders.Add(order);
@@ -144,6 +142,7 @@ class LocalSearch
 
         if (choice < chanceAdd) // Chance Add
             TryAddOrder();
+
         else if (choice < chanceAdd + chanceRemove) // Chance Remove
             TryRemoveOrder();
 
@@ -152,13 +151,6 @@ class LocalSearch
 
         else if (choice < chanceAdd + chanceRemove + chancePureShiftWithinTrip + chancePureShiftBetweenTrips)
             TryPureShiftBetweenTrips();
-
-        /*
-        else if (choice < chanceAdd + chanceRemove + chanceShift) // Chance Shift
-            TryShiftOrders();
-        else if (choice < chanceAdd + chanceRemove + chanceShift + chanceSwap) // Chance Swap
-            TrySwapOrders();
-        */
     }
 
     /// <summary>
@@ -181,7 +173,7 @@ class LocalSearch
             Day day = days[i];
             DaySchedule route = RandomTruck().schedule.weekSchedule[(int)day];
             RouteTrip trip = route.getRandomRouteTrip();
-            DoublyNode<Order> target = trip.getRandomOrderNode();
+            DoublyNode<Order> target = trip.getRandomOrderNode().Item1;
             targetRouteList[i] = (target, trip);
         }
 
@@ -208,6 +200,13 @@ class LocalSearch
         {
             for (int i = 0; i < order.freq; i++)
                 targetRouteList[i].Item2.AddOrder(order, targetRouteList[i].Item1, timeChanges[i]);
+            // If freq > 1, update links so that this order can easily reference itself in other trips.
+            if (order.freq > 1)
+            {
+                order.links = new List<(DoublyNode<Order>, RouteTrip)>();
+                for (int i = 0; i < order.freq; i++)
+                    order.links.Add((targetRouteList[i].Item1.prev, targetRouteList[i].Item2));
+            }
             orders.Remove(orderT.Item2);
             adds++;
         }
@@ -219,21 +218,19 @@ class LocalSearch
     void TryRemoveOrder()
     {
         RouteTrip trip = RandomDaySchedule(RandomTruck()).getRandomRouteTrip();
-        DoublyNode<Order> orderNode = trip.getRandomOrderNode();
+        (DoublyNode<Order>, int) orderT = trip.getRandomOrderNode();
+        DoublyNode<Order> orderNode = orderT.Item1;
         Order order = orderNode.value;
         if (order.freq == 0)
             return;
 
         List<(DoublyNode<Order>, RouteTrip)> targetRouteList = new List<(DoublyNode<Order>, RouteTrip)>();
-        // TODO optimalisatie: Super dirty: dit werkt maar is traag voor freq > 1! Specifieker kunnen zoeken is een stuk sneller.
+        // Dit is nu met referenties en snel :)
         if (order.freq == 1)
             targetRouteList.Add((orderNode, trip));
         if (order.freq > 1)
-            foreach (Truck truck in trucks)
-                foreach (DaySchedule daySchedule in truck.schedule.weekSchedule)
-                    foreach (RouteTrip routeTrip in daySchedule.trips)
-                        if (routeTrip.orders.Contains(order))
-                            targetRouteList.Add((routeTrip.orders.Find(order), routeTrip));
+            foreach ((DoublyNode<Order>, RouteTrip) link in order.links)
+                targetRouteList.Add(link);
 
         // Calculate change in time and cost.
         float[] timeChanges = new float[order.freq];
@@ -254,7 +251,11 @@ class LocalSearch
         if (totalCostChange < 0 || Program.random.NextDouble() < p)
         {
             for (int i = 0; i < order.freq; i++)
-                targetRouteList[i].Item2.RemoveOrder(targetRouteList[i].Item1, timeChanges[i]);
+            {
+                int index = targetRouteList[i].Item2.orderArray.FindIndex(targetRouteList[i].Item1);
+                targetRouteList[i].Item2.RemoveOrder(targetRouteList[i].Item1, index, timeChanges[i]);
+            }
+                
             orders.Add(order);
             removes++;
         }
@@ -269,8 +270,9 @@ class LocalSearch
             return; // For 3 or less orders, shifting an order within a trip is not possible
 
         // Get valid order nodes for shift
-        DoublyNode<Order> orderNode1 = trip.getRandomOrderNode();
-        DoublyNode<Order> orderNode2 = trip.getRandomOrderNode();
+        (DoublyNode<Order>, int) orderT1 = trip.getRandomOrderNode(2);
+        DoublyNode<Order> orderNode1 = orderT1.Item1;
+        DoublyNode<Order> orderNode2 = trip.getRandomOrderNode(2).Item1;
         if (orderNode2.Equals(orderNode1) || orderNode1.value.freq == 0 || orderNode2.value.freq == 0)
             return; // cannot shift with start/stortplaatsen or itself
 
@@ -283,8 +285,14 @@ class LocalSearch
         float costChange = timeChange;  // equal because cost penalty wont be applied in within trip shift
         double p = Math.Exp(-costChange / T / pCorrectionPureShiftWithinTrip);
 
-        if (costChange < 0 || Program.random.NextDouble() < p) {
-            trip.PureShiftOrderBeforeOther(orderNode1, orderNode2, timeChange);
+        if (costChange < 0 || Program.random.NextDouble() < p)
+        {
+            DoublyNode<Order> newNode1 = trip.PureShiftOrderBeforeOther(orderNode1, orderNode2, timeChange);
+            trip.orderArray.Update(newNode1, orderT1.Item2);    // Update node in the smart array (previous node now has null pointers, new node points correctly)
+            // If freq > 1, update links to remove the old orderNode and add the new one
+            orderNode1.value.links.Remove((orderNode1, trip));  
+            orderNode1.value.links.Add((newNode1, trip));
+
             pureShiftsWithinTrip++;
         }
         
@@ -300,10 +308,12 @@ class LocalSearch
             trip2 = RandomRouteTrip();
         if (trip.orders.Length < 3 || trip2.orders.Length < 3)
             return; // Either trips should have at least 1 order apart from start/stort in order to be shiftable
-        
+
         // Get valid order nodes for shift
-        DoublyNode<Order> orderNode1 = trip.getRandomOrderNode();
-        DoublyNode<Order> orderNode2 = trip2.getRandomOrderNode();
+        (DoublyNode<Order>, int) orderT1 = trip.getRandomOrderNode();
+        (DoublyNode<Order>, int) orderT2 = trip2.getRandomOrderNode();
+        DoublyNode<Order> orderNode1 = orderT1.Item1;
+        DoublyNode<Order> orderNode2 = orderT2.Item1;
 
         if (orderNode1.value.freq == 0 || orderNode2.value.freq == 0 )
             return; // cannot shift with start/stortplaatsen
@@ -326,105 +336,13 @@ class LocalSearch
         double p = Math.Exp(-costChange / T / pCorrectionPureShiftBetweenTrips);
 
         if (costChange < 0 || Program.random.NextDouble() < p) {
-            // place order1 before order2
-            trip.orders.EjectAfterNode(orderNode1.prev);
-            trip2.orders.InsertBeforeNode(orderNode1.value, orderNode2);
-
-            // modify trip times to complete
-            trip.timeToComplete += timeChangeRemove;
-            trip2.timeToComplete += timeChangeInsert;
-
-            // modify trip volumes
-            trip.volumePickedUp -= orderNode1.value.volume;
-            trip2.volumePickedUp += orderNode1.value.volume;
+            trip2.AddOrder(orderNode1.value, orderNode2, timeChangeInsert);
+            int index = trip.orderArray.FindIndex(orderNode1);
+            trip.RemoveOrder(orderNode1, index, timeChangeRemove);
 
             pureShiftsBetweenTrips++;
         }
     }
-
-
-    ///// <summary>
-    ///// Try to shift two orders in the same route.
-    ///// </summary>
-    //void TryShiftOrders()
-    //{
-    //    // Get a random route.
-    //    RouteTrip trip = RandomRouteTrip();
-    //    if (trip.orders.Length < 4) // With 3 or less orders (1 or less without start and end), a swap is not possible.
-    //        return;
-
-    //    // Get 2 random order nodes from this route.
-    //    DoublyNode<Order> orderNode1 = trip.getRandomOrderNode();
-    //    DoublyNode<Order> orderNode2 = trip.getRandomOrderNode();
-    //    if (orderNode1.Equals(orderNode2) || orderNode1.value.freq == 0 || orderNode2.value.freq == 0)  // No sense swapping a node with itself.
-    //        return;
-
-    //    // Calculate change in time and see if the shift can fit in the schedule.
-    //    float timeChange = Schedule.TimeChangeShift(orderNode1, orderNode2);
-    //    if (trip.totalTime + timeChange > maxDayTime)
-    //        return; // Check if shift fits time-wise
-
-    //    // Calculate cost change and see if shifting this order is an improvement.
-    //    float costChange = Schedule.CostChangeShift(orderNode1, orderNode2);
-    //    double p = Math.Exp(-costChange / T / pCorrectionShift);
-
-    //    // Shift order.
-    //    if (costChange < 0 || Program.random.NextDouble() < p)
-    //    {
-    //        trip.ShiftOrders(orderNode1, orderNode2, timeChange);
-    //        shifts++;
-    //    }
-    //}
-
-    ///// <summary>
-    ///// Try to swap two orders in the current schedules (shift between different routes).
-    ///// </summary>
-    //void TrySwapOrders()
-    //{
-    //    // Get 2 random routes.
-    //    RouteTrip trip1 = RandomRouteTrip();
-    //    RouteTrip trip2 = RandomRouteTrip();
-    //    if (trip1.Equals(trip2)) // If the routes are the same, it's not a swap but a shift.
-    //        return;
-
-    //    // get 2 random order nodes from these routes.
-    //    DoublyNode<Order> orderNode1 = trip1.getRandomOrderNode();
-    //    DoublyNode<Order> orderNode2 = trip2.getRandomOrderNode();
-
-    //    if (trip1.Equals(trip2)) // If the routes are the same, it's not a swap but a shift.
-    //        return;
-
-    //    if (orderNode1.value.freq != 1 || orderNode2.value.freq != 1) // Swapping nodes of freq > 1 is asking for trouble!
-    //        return;
-
-    //    // Calculate the time change and see if swapping these orders can fit into the time schedules.
-    //    float timeChange1 = Schedule.TimeChangeSwap(orderNode1, orderNode2),
-    //        timeChange2 = Schedule.TimeChangeSwap(orderNode2, orderNode1);
-    //    if (trip1.totalTime + timeChange1 > maxDayTime || trip2.totalTime + timeChange2 > maxDayTime)
-    //        return; // Check if swap fits time-wise
-
-    //    // Calculate the volume change and see if this can fit.
-    //    int volumeChange1 = orderNode2.value.volume - orderNode1.value.volume,
-    //        volumeChange2 = orderNode1.value.volume - orderNode2.value.volume;
-    //    if (trip1.volumePickedUp + volumeChange1 > Truck.volumeCapacity || trip2.volumePickedUp + volumeChange2 > Truck.volumeCapacity)
-    //        return;
-
-    //    // Calculate cost change and see if swapping these orders is an improvement.
-    //    float costChange = Schedule.CostChangeSwap(orderNode1, orderNode2),
-    //        costChange2 = Schedule.CostChangeSwap(orderNode2, orderNode1);
-    //    double p = Math.Exp(-(costChange + costChange2) / T / pCorrectionSwap);
-
-    //    // Swap order nodes.
-    //    if (costChange + costChange2 < 0 || Program.random.NextDouble() <= p)
-    //    {
-    //        trip1.timeToComplete += timeChange1;
-    //        trip1.volumePickedUp += volumeChange1;
-    //        trip2.timeToComplete += timeChange2;
-    //        trip2.volumePickedUp += volumeChange2;
-    //        DoublyList<Order>.SwapNodes(orderNode1, orderNode2);
-    //        swaps++;
-    //    }
-    //}
 
     /// <summary>
     /// Calculates the total cost of a solution by checking all its content.
