@@ -12,24 +12,22 @@ class LocalSearch
 
     // Config:
     public static double
-        totalIterations = 1400_000_000,
+        totalIterations = 300_000_000,
         chanceAdd = 0.02,           // Chances are cumulative up to 1.00
         chanceRemove = 0.01,
-        chanceShift = 0.00,
-        chanceSwap = 0.00,
         chancePureShiftWithinTrip = 0.30,
         chancePureShiftBetweenTrips = 0.67,
         alpha = 0.99,               // Rate at which T declines
         startT = 0.50,              // Starting chance to accept worse outcomes
         T = startT,
-        reheatT = startT / 80,           // When reheating, T will be set to this
+        reheatT = startT / 100,           // When reheating, T will be set to this
         coolDownIts = 100_000,        // Amount of iterations after which T*alpha happens
-        reheat = 35_000_000,        // Reset T after this amount of iterations
+        reheat = 50_000_000,        // Reset T after this amount of iterations
 
         pCorrectionAdd = 8000,     // For adds - Increase for more accepted adds
-        pCorrectionRemove = 1000,   // For removes - Increase for more accepted removes
+        pCorrectionRemove = 2000,   // For removes - Increase for more accepted removes
         pCorrectionPureShiftWithinTrip = 100,
-        pCorrectionPureShiftBetweenTrips = 1000;
+        pCorrectionPureShiftBetweenTrips = 1500;
 
 
 
@@ -342,8 +340,7 @@ class LocalSearch
 
         if (costChange < 0 || Program.random.NextDouble() < p) {
             trip2.AddOrder(orderNode1.value, orderNode2, timeChangeInsert);
-            int index = trip.orderArray.FindIndex(orderNode1);
-            trip.RemoveOrder(orderNode1, index, timeChangeRemove);
+            trip.RemoveOrder(orderNode1, orderT1.Item2, timeChangeRemove);
 
             pureShiftsBetweenTrips++;
         }
