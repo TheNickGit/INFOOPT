@@ -8,11 +8,11 @@ class LocalSearch
 {
     public static Stopwatch sw = new Stopwatch();
     public static bool showProgress = true;
-    public static int showProgressPerIterations = 99_000;
+    public static int showProgressPerIterations = 333_000;
 
     // Config:
     public static double
-        totalIterations = 100_000_000,
+        totalIterations = 1400_000_000,
         chanceAdd = 0.02,           // Chances are cumulative up to 1.00
         chanceRemove = 0.01,
         chanceShift = 0.00,
@@ -22,9 +22,9 @@ class LocalSearch
         alpha = 0.99,               // Rate at which T declines
         startT = 0.50,              // Starting chance to accept worse outcomes
         T = startT,
-        reheatT = startT / 100,           // When reheating, T will be set to this
-        coolDownIts = 50_000,        // Amount of iterations after which T*alpha happens
-        reheat = 30_000_000,        // Reset T after this amount of iterations
+        reheatT = startT / 80,           // When reheating, T will be set to this
+        coolDownIts = 100_000,        // Amount of iterations after which T*alpha happens
+        reheat = 35_000_000,        // Reset T after this amount of iterations
 
         pCorrectionAdd = 8000,     // For adds - Increase for more accepted adds
         pCorrectionRemove = 1000,   // For removes - Increase for more accepted removes
@@ -90,7 +90,7 @@ class LocalSearch
         trucks[0].schedule.weekSchedule[0].AddTrip();
         //trucks[0].schedule.weekSchedule[1].AddTrip();
         //trucks[0].schedule.weekSchedule[2].AddTrip();
-        trucks[0].schedule.weekSchedule[3].AddTrip();
+        //trucks[0].schedule.weekSchedule[3].AddTrip();
         trucks[0].schedule.weekSchedule[4].AddTrip();
         trucks[1].schedule.weekSchedule[0].AddTrip();
         //trucks[1].schedule.weekSchedule[1].AddTrip();
@@ -106,12 +106,14 @@ class LocalSearch
             double progress = Math.Round(100 * (((float)it) / ((float)totalIterations)), 1);
             double duration = Math.Round(sw.ElapsedMilliseconds / 1000f, 1);
             double controlParam = Math.Round(T, 3);
-            string[] args = new string[3] {
+            double score = Math.Round(this.CalcTotalCost(), 2);
+            string[] args = new string[4] {
                 progress.ToString().PadLeft(4),
                 duration.ToString().PadLeft(6),
-                controlParam.ToString().PadLeft(6)
+                controlParam.ToString().PadLeft(6),
+                score.ToString().PadLeft(8)
             };
-            Console.Error.Write(String.Format("LS progress: {0} % ({1} s; {2} T)\r", args));
+            Console.Error.Write(String.Format("LS progress: {0} % ({1} s; {2} T; {3} score)\r", args));
         }
     }
 
@@ -126,8 +128,11 @@ class LocalSearch
             Iteration();
             if (i % coolDownIts == 0)
                 T *= alpha;
-            if (i % reheat == 0)
+            if (i % reheat == 0) {
                 T = reheatT;
+                Program.SaveLSCheckerOutput(this);
+            }
+                
             if (showProgress)
                 this.DisplayProgress(i);
         }
